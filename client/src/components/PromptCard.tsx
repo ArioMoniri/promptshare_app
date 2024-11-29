@@ -20,8 +20,22 @@ import {
 } from "lucide-react";
 import type { Prompt } from "@db/schema";
 
+import type { Comment } from "@db/schema";
+
+interface PromptComment extends Comment {
+  user: {
+    id: number;
+    username: string;
+    avatar: string | null;
+  } | null;
+}
+
+interface PromptWithComments extends Prompt {
+  comments?: PromptComment[];
+}
+
 interface PromptCardProps {
-  prompt: Prompt;
+  prompt: PromptWithComments;
 }
 
 export default function PromptCard({ prompt }: PromptCardProps) {
@@ -262,45 +276,67 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
       {/* Test Dialog */}
       <Dialog open={showTest} onOpenChange={setShowTest}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Test Prompt</DialogTitle>
           </DialogHeader>
-          <ScrollArea className="h-[400px]">
-            <div className="space-y-4 p-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-4">
               <div className="bg-muted p-4 rounded-lg">
-                <pre className="whitespace-pre-wrap">{prompt.content}</pre>
+                <h3 className="font-medium mb-2">Prompt Template:</h3>
+                <pre className="whitespace-pre-wrap text-sm">{prompt.content}</pre>
               </div>
-              <div className="space-y-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setTestInput(prompt.content)}
+                className="w-full"
+              >
+                Paste Prompt as Input
+              </Button>
+              <div className="flex gap-2">
+                <Input
+                  value={testInput}
+                  onChange={(e) => setTestInput(e.target.value)}
+                  placeholder="Enter test input..."
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && testInput) {
+                      handleTest();
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={handleTest} 
+                  disabled={testing || !testInput}
+                  className="shrink-0"
+                >
+                  {testing ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <ScrollArea className="h-[500px] border rounded-lg">
+              <div className="space-y-4 p-4">
                 {testHistory.map((result, index) => (
                   <div key={index} className="space-y-2">
-                    <div className="bg-muted p-2 rounded">
-                      <p className="font-medium">Input:</p>
-                      <p>{result.input}</p>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="font-medium text-sm">Input:</p>
+                      <p className="text-sm">{result.input}</p>
                     </div>
-                    <div className="bg-primary/10 p-2 rounded">
-                      <p className="font-medium">Output:</p>
-                      <p>{result.output}</p>
+                    <div className="bg-primary/10 p-3 rounded-lg">
+                      <p className="font-medium text-sm">Output:</p>
+                      <pre className="text-sm whitespace-pre-wrap">{result.output}</pre>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatDistanceToNow(result.timestamp, { addSuffix: true })}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-          </ScrollArea>
-          <div className="flex gap-2 pt-4">
-            <Input
-              value={testInput}
-              onChange={(e) => setTestInput(e.target.value)}
-              placeholder="Enter test input..."
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey && testInput) {
-                  handleTest();
-                }
-              }}
-            />
-            <Button onClick={handleTest} disabled={testing || !testInput}>
-              <Send className="h-4 w-4" />
-            </Button>
+            </ScrollArea>
           </div>
         </DialogContent>
       </Dialog>
