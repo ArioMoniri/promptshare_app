@@ -30,8 +30,10 @@ export function registerRoutes(app: Express) {
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id));
+      res.setHeader('Content-Type', 'application/json');
       res.json(allPrompts);
     } catch (error) {
+      res.setHeader('Content-Type', 'application/json');
       res.status(500).json({ error: "Failed to fetch prompts" });
     }
   });

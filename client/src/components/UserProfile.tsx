@@ -37,15 +37,37 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch(`/api/users/${id}`);
-        if (!response.ok) {
-          const errorMessage = await response.text();
-          throw new Error(errorMessage || `Failed to fetch user profile (${response.status})`);
+        // Parse ID to ensure it's numeric
+        const userId = parseInt(id || '', 10);
+        if (isNaN(userId)) {
+          throw new Error('Invalid user ID');
         }
+
+        const response = await fetch(`/api/users/${userId}`, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+
+        if (response.status === 404) {
+          throw new Error('User not found');
+        }
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || `Failed to fetch user profile (${response.status})`);
+        }
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Invalid response format');
+        }
+
         const data = await response.json();
-        if (!data || !data.id) {
+        if (!data || typeof data.id !== 'number') {
           throw new Error('Invalid user data received');
         }
+
         setProfileUser(data);
       } catch (error: any) {
         toast({
@@ -53,7 +75,6 @@ export default function UserProfile() {
           title: "Error",
           description: error.message || "Failed to fetch user profile",
         });
-        // Reset profile user to ensure clean state
         setProfileUser(null);
       }
     };
@@ -63,7 +84,7 @@ export default function UserProfile() {
     } else if (currentUser) {
       setProfileUser(currentUser);
     }
-  }, [id, currentUser]);
+  }, [id, currentUser, toast]);
 
   const userPrompts = prompts?.filter(p => p.userId === (profileUser?.id ?? currentUser?.id)) || [];
   const isOwnProfile = profileUser?.id === currentUser?.id;
@@ -113,7 +134,7 @@ export default function UserProfile() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            {isOwnProfile ? "Manage your account settings and API key" : `${displayUser.username}'s profile`}
+            {isOwnProfile ? "Manage your account settings and API key" : `${displayUser?.username}'s profile`}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -168,7 +189,7 @@ export default function UserProfile() {
 
       <div className="space-y-4">
         <h2 className="text-2xl font-bold">
-          {isOwnProfile ? "Your Prompts" : `${displayUser.username}'s Prompts`}
+          {isOwnProfile ? "Your Prompts" : `${displayUser?.username}'s Prompts`}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {userPrompts.map((prompt) => (

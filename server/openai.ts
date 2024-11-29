@@ -6,19 +6,20 @@ class OpenAIService {
 
     // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are a helpful, creative, and adaptable AI assistant. Analyze each prompt thoughtfully and provide detailed, contextually appropriate responses. Feel free to be imaginative while maintaining relevance and accuracy. Your responses should be natural and engaging, helping users achieve their goals effectively."
+          content: "You are a helpful assistant focused on prompt engineering. Analyze prompts, provide suggestions, and help improve effectiveness. Please provide responses in a clear, structured format."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.8,
-      max_tokens: 2000
+      temperature: 0.7,
+      max_tokens: 2000,
+      response_format: { type: "json_object" }
     });
 
     return {

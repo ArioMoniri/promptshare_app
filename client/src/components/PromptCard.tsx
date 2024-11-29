@@ -215,7 +215,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             onClick={() => handleVote(1)}
           >
             <ThumbsUp className="h-4 w-4" />
-            {prompt.likes > 0 ? prompt.likes : ''}
+            {(prompt.likes ?? 0) > 0 ? prompt.likes : ''}
           </Button>
           <Button
             variant="ghost"
@@ -224,7 +224,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             onClick={() => handleVote(-1)}
           >
             <ThumbsDown className="h-4 w-4" />
-            {prompt.likes < 0 ? Math.abs(prompt.likes) : ''}
+            {(prompt.likes ?? 0) < 0 ? Math.abs(prompt.likes ?? 0) : ''}
           </Button>
           <Button
             variant="ghost"
@@ -277,7 +277,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 items-start">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={comment.user?.avatar} />
+                    <AvatarImage src={comment.user?.avatar || undefined} />
                     <AvatarFallback>{comment.user?.username[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
