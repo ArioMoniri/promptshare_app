@@ -17,6 +17,7 @@ import {
   Share2,
   Bot,
   Send,
+  Loader2,
 } from "lucide-react";
 import type { Prompt } from "@db/schema";
 
@@ -236,6 +237,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Comments</DialogTitle>
+            <DialogDescription>View and add comments for this prompt</DialogDescription>
           </DialogHeader>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-4">
@@ -279,6 +281,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>Test Prompt</DialogTitle>
+            <DialogDescription>Test this prompt with custom inputs</DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-4">
