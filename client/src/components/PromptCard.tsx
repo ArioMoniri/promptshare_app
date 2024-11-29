@@ -31,6 +31,33 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [comment, setComment] = useState("");
   const [testInput, setTestInput] = useState("");
   const { testPrompt } = useOpenAI();
+const handleComment = async () => {
+  try {
+    const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: comment }),
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    setComment('');
+    toast({
+      title: "Success",
+      description: "Comment added successfully",
+    });
+  } catch (error: any) {
+    toast({
+      variant: "destructive",
+      title: "Error",
+      description: error.message,
+    });
+  }
+};
+
 
   const handleVote = async (value: 1 | -1) => {
     try {

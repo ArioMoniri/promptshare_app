@@ -73,8 +73,7 @@ export function registerRoutes(app: Express) {
       const [existingVote] = await db
         .select()
         .from(votes)
-        .where(eq(votes.promptId, promptId))
-        .where(eq(votes.userId, req.user!.id))
+        .where(sql`${votes.promptId} = ${promptId} AND ${votes.userId} = ${req.user!.id}`)
         .limit(1);
 
       if (existingVote) {
@@ -102,14 +101,16 @@ export function registerRoutes(app: Express) {
       }
 
       // Update prompt score
-      const votesSum = await db
-        .select({ sum: sql`sum(value)` })
+      const [{ sum }] = await db
+        .select({
+          sum: sql<number>`COALESCE(SUM(value), 0)`
+        })
         .from(votes)
         .where(eq(votes.promptId, promptId));
 
       await db
         .update(prompts)
-        .set({ likes: votesSum[0].sum || 0 })
+        .set({ likes: sum })
         .where(eq(prompts.id, promptId));
 
       res.json({ ok: true });
