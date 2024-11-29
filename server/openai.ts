@@ -10,15 +10,15 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: "As a versatile AI assistant, engage naturally with users and respond thoughtfully to their prompts. Aim to provide creative, detailed, and contextually relevant responses while maintaining a conversational tone."
+          content: "You are a helpful, creative, and adaptable AI assistant. Analyze each prompt thoughtfully and provide detailed, contextually appropriate responses. Feel free to be imaginative while maintaining relevance and accuracy. Your responses should be natural and engaging, helping users achieve their goals effectively."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 1.0,
-      max_tokens: 1000
+      temperature: 0.8,
+      max_tokens: 2000
     });
 
     return {

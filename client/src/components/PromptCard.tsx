@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,13 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
   const [testing, setTesting] = useState(false);
-  const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
+  const [comments, setComments] = useState<PromptComment[]>([]);
+  
+  useEffect(() => {
+    if (prompt.id) {
+      fetchComments();
+    }
+  }, [prompt.id]);
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
 
@@ -233,10 +239,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             variant="ghost" 
             size="sm" 
             className="gap-2"
-            onClick={() => {
-              setShowComments(true);
-              fetchComments();
-            }}
+            onClick={() => setShowComments(true)}
           >
             <MessageSquare className="h-4 w-4" />
             {comments.length}
