@@ -24,12 +24,14 @@ import {
   Bot,
   Send,
   Loader2,
+  User
 } from "lucide-react";
 import type { Prompt } from "@db/schema";
 
-import type { Comment } from "@db/schema";
-
-interface PromptComment extends Comment {
+interface PromptComment {
+  id: number;
+  content: string;
+  createdAt: string;
   user: {
     id: number;
     username: string;
@@ -52,19 +54,19 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
   const [testing, setTesting] = useState(false);
-  const [comments, setComments] = useState<PromptComment[]>([]);
+  const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
   const [hasVoted, setHasVoted] = useState<number>(0);
   const [optimisticLikes, setOptimisticLikes] = useState<number>(prompt.likes ?? 0);
-  
+
+  const { testPrompt } = useOpenAI();
+  const { toast } = useToast();
+
   useEffect(() => {
     if (prompt.id) {
       fetchComments();
-      // Reset optimistic likes when prompt changes
       setOptimisticLikes(prompt.likes ?? 0);
     }
   }, [prompt.id, prompt.likes]);
-  const { testPrompt } = useOpenAI();
-  const { toast } = useToast();
 
   const fetchComments = async () => {
     try {
@@ -84,6 +86,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   };
 
   const handleComment = async () => {
+    if (!comment.trim()) return;
+    
     try {
       const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
         method: 'POST',
@@ -117,7 +121,10 @@ export default function PromptCard({ prompt }: PromptCardProps) {
     if (!testInput) return;
     setTesting(true);
     try {
-      const result = await testPrompt(prompt.content);
+      // Replace variables in the prompt with actual test input
+      const processedPrompt = prompt.content.replace(/\{input\}/g, testInput);
+      const result = await testPrompt(processedPrompt);
+      
       setTestHistory(prev => [...prev, {
         input: testInput,
         output: result.output,
@@ -237,63 +244,65 @@ export default function PromptCard({ prompt }: PromptCardProps) {
           </p>
         )}
       </CardContent>
-      <CardFooter className="flex justify-between">
-        <div className="flex gap-2">
+      <CardFooter>
+        <div className="flex justify-between items-center w-full">
+          <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => handleVote(1)}
+            >
+              <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
+              {optimisticLikes > 0 ? optimisticLikes : ''}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => handleVote(-1)}
+            >
+              <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
+              {optimisticLikes < 0 ? Math.abs(optimisticLikes) : ''}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={handleCopy}
+            >
+              <Copy className="h-4 w-4" />
+              Copy
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setShowComments(true)}
+            >
+              <MessageSquare className="h-4 w-4" />
+              {comments.length}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => setShowTest(true)}
+            >
+              <Bot className="h-4 w-4" />
+              Test
+            </Button>
+          </div>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => handleVote(1)}
+            onClick={handleShare}
           >
-            <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
-            {optimisticLikes > 0 ? optimisticLikes : ''}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => handleVote(-1)}
-          >
-            <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
-            {optimisticLikes < 0 ? Math.abs(optimisticLikes) : ''}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleCopy}
-          >
-            <Copy className="h-4 w-4" />
-            Copy
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-2"
-            onClick={() => setShowComments(true)}
-          >
-            <MessageSquare className="h-4 w-4" />
-            {comments.length}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setShowTest(true)}
-          >
-            <Bot className="h-4 w-4" />
-            Test
+            <Share2 className="h-4 w-4" />
+            Share
           </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-2"
-          onClick={handleShare}
-        >
-          <Share2 className="h-4 w-4" />
-          Share
-        </Button>
       </CardFooter>
 
       {/* Comments Dialog */}
@@ -309,7 +318,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
                 <div key={comment.id} className="flex gap-3 items-start">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={comment.user?.avatar || undefined} />
-                    <AvatarFallback>{comment.user?.username[0]}</AvatarFallback>
+                    <AvatarFallback>{comment.user?.username?.[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     {comment.user?.id ? (
