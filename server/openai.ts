@@ -9,14 +9,13 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: "You are an expert AI assistant focused on helping users test and improve their prompts. Your goal is to provide clear, helpful responses that demonstrate how the prompt performs. Remember to maintain the original intent of the prompt while providing meaningful output."
+          content: "You are a helpful AI assistant."
         },
         {
           role: "user",
           content: prompt
         }
-      ],
-      temperature: 0.7
+      ]
     });
 
     return {
