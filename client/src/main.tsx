@@ -33,7 +33,7 @@ function Router() {
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={HomePage} />
-          <Route path="/profile" component={UserProfile} />
+          <Route path="/profile/:id" component={UserProfile} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>

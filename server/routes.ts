@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { prompts, users } from "@db/schema";
-import { eq } from "drizzle-orm";
+import { prompts, votes, users } from "@db/schema";
+import { eq, sql } from "drizzle-orm";
 import { openai } from "./openai";
 
 export function registerRoutes(app: Express) {
