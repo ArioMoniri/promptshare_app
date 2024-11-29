@@ -78,7 +78,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
         title,
         content,
         description,
-        tags: [] as string[],
+        tags: [] as unknown as string[],
       });
       toast({
         title: "Success",
