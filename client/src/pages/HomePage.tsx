@@ -23,7 +23,7 @@ export default function HomePage() {
     try {
       if (!searchQuery.trim() || !prompts) {
         setIsSearching(false);
-        return { profiles: [], prompts };
+        return { profiles: [], prompts: [] };
       }
       
       const query = searchQuery.toLowerCase();
@@ -55,7 +55,7 @@ export default function HomePage() {
       };
     } catch (error) {
       setIsSearching(false);
-      return { profiles: [], prompts };
+      return { profiles: [], prompts: [] };
     }
   }, [prompts, searchQuery, activeTab]);
 
@@ -117,7 +117,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">Matching Prompts</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredResults.prompts.map(prompt => (
+                {(filteredResults.prompts ?? []).map(prompt => (
                   <PromptCard key={prompt.id} prompt={prompt} />
                 ))}
               </div>
@@ -140,7 +140,7 @@ export default function HomePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredResults.prompts.map((prompt) => (
+                  {(filteredResults.prompts ?? []).map((prompt) => (
                     <PromptCard key={prompt.id} prompt={prompt} />
                   ))}
                 </div>
@@ -149,7 +149,7 @@ export default function HomePage() {
 
             <TabsContent value="recent">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredResults.prompts.map((prompt) => (
+                {(filteredResults.prompts ?? []).map((prompt) => (
                   <PromptCard key={prompt.id} prompt={prompt} />
                 ))}
               </div>
