@@ -8,6 +8,10 @@ class OpenAIService {
       model: "gpt-3.5-turbo",
       messages: [
         {
+          role: "system",
+          content: "You are an expert AI assistant focused on helping users test and improve their prompts. Your goal is to provide clear, helpful responses that demonstrate how the prompt performs. Remember to maintain the original intent of the prompt while providing meaningful output."
+        },
+        {
           role: "user",
           content: prompt
         }
