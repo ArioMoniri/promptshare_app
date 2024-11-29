@@ -1,63 +1,91 @@
+import { useState } from "react";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ThumbsUp, ThumbsDown, MessageSquare, Share2, Copy, User, Send, Bot } from "lucide-react";
-import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { Prompt } from "@db/schema";
-import { useState } from "react";
-import { formatDistanceToNow } from "date-fns";
+import { Link } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 import { useOpenAI } from "../hooks/use-openai";
-
-type PromptWithUser = Prompt & {
-  user: {
-    id: number;
-    username: string;
-    avatar: string | null;
-  } | null;
-};
+import { formatDistanceToNow } from "date-fns";
+import {
+  ThumbsUp,
+  ThumbsDown,
+  MessageSquare,
+  Copy,
+  Share2,
+  Bot,
+  Send,
+} from "lucide-react";
+import type { Prompt } from "@db/schema";
 
 interface PromptCardProps {
-  prompt: PromptWithUser;
+  prompt: Prompt;
 }
 
 export default function PromptCard({ prompt }: PromptCardProps) {
-  const { toast } = useToast();
   const [showComments, setShowComments] = useState(false);
   const [showTest, setShowTest] = useState(false);
   const [comment, setComment] = useState("");
   const [testInput, setTestInput] = useState("");
+  const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
+  const [testing, setTesting] = useState(false);
   const { testPrompt } = useOpenAI();
-const handleComment = async () => {
-  try {
-    const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: comment }),
-      credentials: 'include',
-    });
+  const { toast } = useToast();
 
-    if (!response.ok) {
-      throw new Error(await response.text());
+  const handleComment = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: comment }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      setComment('');
+      toast({
+        title: "Success",
+        description: "Comment added successfully",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
     }
+  };
 
-    setComment('');
-    toast({
-      title: "Success",
-      description: "Comment added successfully",
-    });
-  } catch (error: any) {
-    toast({
-      variant: "destructive",
-      title: "Error",
-      description: error.message,
-    });
-  }
-};
-
+  const handleTest = async () => {
+    if (!testInput) return;
+    setTesting(true);
+    try {
+      const result = await testPrompt(prompt.content);
+      setTestHistory(prev => [...prev, {
+        input: testInput,
+        output: result.output,
+        timestamp: new Date()
+      }]);
+      setTestInput("");
+      toast({
+        title: "Test successful",
+        description: "Your prompt works as expected",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Test failed",
+        description: error.message,
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
 
   const handleVote = async (value: 1 | -1) => {
     try {
@@ -244,7 +272,18 @@ const handleComment = async () => {
                 <pre className="whitespace-pre-wrap">{prompt.content}</pre>
               </div>
               <div className="space-y-4">
-                {/* Test results will be shown here */}
+                {testHistory.map((result, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="bg-muted p-2 rounded">
+                      <p className="font-medium">Input:</p>
+                      <p>{result.input}</p>
+                    </div>
+                    <div className="bg-primary/10 p-2 rounded">
+                      <p className="font-medium">Output:</p>
+                      <p>{result.output}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </ScrollArea>
@@ -259,7 +298,7 @@ const handleComment = async () => {
                 }
               }}
             />
-            <Button onClick={handleTest} disabled={!testInput}>
+            <Button onClick={handleTest} disabled={testing || !testInput}>
               <Send className="h-4 w-4" />
             </Button>
           </div>
