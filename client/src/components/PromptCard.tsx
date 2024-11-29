@@ -52,8 +52,26 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
   const [testing, setTesting] = useState(false);
+  const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
+
+  const fetchComments = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/comments`);
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+      const data = await response.json();
+      setComments(data);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to fetch comments",
+      });
+    }
+  };
 
   const handleComment = async () => {
     try {
@@ -68,7 +86,10 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         throw new Error(await response.text());
       }
 
+      const newComment = await response.json();
+      setComments(prev => [...prev, newComment]);
       setComment('');
+      
       toast({
         title: "Success",
         description: "Comment added successfully",
@@ -153,11 +174,11 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="flex flex-row items-center gap-4">
-        <Link href={`/profile/${prompt.user?.id}`}>
+        <Link href={`/profile/${prompt.user?.id}`} onClick={(e) => e.stopPropagation()}>
           <Avatar className="cursor-pointer">
             <AvatarImage src={prompt.user?.avatar || undefined} alt={prompt.user?.username || ""} />
             <AvatarFallback>
-              {prompt.user?.username.charAt(0).toUpperCase()}
+              {prompt.user?.username?.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
         </Link>
@@ -212,10 +233,13 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             variant="ghost" 
             size="sm" 
             className="gap-2"
-            onClick={() => setShowComments(true)}
+            onClick={() => {
+              setShowComments(true);
+              fetchComments();
+            }}
           >
             <MessageSquare className="h-4 w-4" />
-            {prompt.comments?.length || 0}
+            {comments.length}
           </Button>
           <Button
             variant="ghost"
@@ -247,7 +271,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
           </DialogHeader>
           <ScrollArea className="h-[400px] pr-4">
             <div className="space-y-4">
-              {prompt.comments?.map((comment) => (
+              {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 items-start">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={comment.user?.avatar} />

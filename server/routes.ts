@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
-import { prompts, votes, users } from "@db/schema";
+import { prompts, votes, users, comments } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
 import { openai } from "./openai";
 
@@ -140,6 +140,82 @@ export function registerRoutes(app: Express) {
       });
     }
   });
+  // Comments endpoints
+  app.get("/api/prompts/:id/comments", async (req, res) => {
+    const promptId = parseInt(req.params.id);
+    if (isNaN(promptId)) {
+      return res.status(400).send("Invalid prompt ID");
+    }
+
+    try {
+      const result = await db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.promptId, promptId));
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch comments" });
+    }
+  });
+
+  app.post("/api/prompts/:id/comments", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    const promptId = parseInt(req.params.id);
+    if (isNaN(promptId)) {
+      return res.status(400).send("Invalid prompt ID");
+    }
+
+    const { content } = req.body;
+    if (!content) {
+      return res.status(400).send("Comment content is required");
+    }
+
+    try {
+      const [comment] = await db
+        .insert(comments)
+        .values({
+          promptId,
+          userId: req.user!.id,
+          content
+        })
+        .returning();
+
+      // Fetch the complete comment with user data
+      const [result] = await db
+        .select({
+          id: comments.id,
+          content: comments.content,
+          createdAt: comments.createdAt,
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
+        })
+        .from(comments)
+        .leftJoin(users, eq(comments.userId, users.id))
+        .where(eq(comments.id, comment.id));
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create comment" });
+    }
+  });
+
 
   app.post("/api/test-prompt", async (req, res) => {
     if (!req.isAuthenticated()) {
