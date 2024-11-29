@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
+import UserProfile from "./components/UserProfile";
 import Navigation from "./components/Navigation";
 
 function Router() {
@@ -32,6 +33,7 @@ function Router() {
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={HomePage} />
+          <Route path="/profile" component={UserProfile} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>

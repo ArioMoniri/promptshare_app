@@ -10,7 +10,26 @@ export function registerRoutes(app: Express) {
 
   app.get("/api/prompts", async (req, res) => {
     try {
-      const allPrompts = await db.select().from(prompts);
+      const allPrompts = await db
+        .select({
+          id: prompts.id,
+          title: prompts.title,
+          content: prompts.content,
+          description: prompts.description,
+          tags: prompts.tags,
+          likes: prompts.likes,
+          version: prompts.version,
+          createdAt: prompts.createdAt,
+          updatedAt: prompts.updatedAt,
+          userId: prompts.userId,
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
+        })
+        .from(prompts)
+        .leftJoin(users, eq(prompts.userId, users.id));
       res.json(allPrompts);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch prompts" });

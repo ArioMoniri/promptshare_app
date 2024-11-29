@@ -36,8 +36,8 @@ export default function HomePage() {
 
         <TabsContent value="trending">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {prompts?.filter(p => p.likes > 0)
-              .sort((a, b) => b.likes - a.likes)
+            {prompts?.filter(p => (p.likes ?? 0) > 0)
+              .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
               .map((prompt) => (
                 <PromptCard key={prompt.id} prompt={prompt} />
               ))}

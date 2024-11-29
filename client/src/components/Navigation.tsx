@@ -21,11 +21,9 @@ export default function Navigation({ user }: NavigationProps) {
   return (
     <nav className="border-b">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/">
-          <a className="flex items-center gap-2 font-semibold text-lg">
-            <Code2 className="h-6 w-6" />
-            PromptHub
-          </a>
+        <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
+          <Code2 className="h-6 w-6" />
+          PromptHub
         </Link>
 
         <div className="flex items-center gap-4">
@@ -42,11 +40,9 @@ export default function Navigation({ user }: NavigationProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuItem asChild>
-                <Link href="/profile">
-                  <a className="flex items-center">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </a>
+                <Link href="/profile" className="flex items-center">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => logout()}>
