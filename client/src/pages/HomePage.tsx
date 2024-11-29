@@ -10,20 +10,33 @@ import { PlusCircle, TrendingUp, Clock, Search } from "lucide-react";
 
 export default function HomePage() {
   const { user } = useUser();
-  const { prompts, isLoading } = usePrompts();
+  const { prompts, isLoading, error } = usePrompts();
   const [showEditor, setShowEditor] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
   const filteredPrompts = useMemo(() => {
-    if (!searchQuery.trim() || !prompts) return prompts;
-    
-    const query = searchQuery.toLowerCase();
-    return prompts.filter(prompt => 
-      prompt.title?.toLowerCase().includes(query) ||
-      prompt.description?.toLowerCase().includes(query) ||
-      prompt.content?.toLowerCase().includes(query) ||
-      prompt.user?.username?.toLowerCase().includes(query)
-    );
+    setIsSearching(true);
+    try {
+      if (!searchQuery.trim() || !prompts) {
+        setIsSearching(false);
+        return prompts;
+      }
+      
+      const query = searchQuery.toLowerCase();
+      const results = prompts.filter(prompt => 
+        prompt.title?.toLowerCase().includes(query) ||
+        prompt.description?.toLowerCase().includes(query) ||
+        prompt.content?.toLowerCase().includes(query) ||
+        prompt.user?.username?.toLowerCase().includes(query)
+      );
+      
+      setIsSearching(false);
+      return results;
+    } catch (error) {
+      setIsSearching(false);
+      return prompts;
+    }
   }, [prompts, searchQuery]);
 
   return (
@@ -61,13 +74,25 @@ export default function HomePage() {
         </TabsList>
 
         <TabsContent value="trending">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPrompts?.filter(p => (p.likes ?? 0) > 0)
-              .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
-              .map((prompt) => (
-                <PromptCard key={prompt.id} prompt={prompt} />
+          {isLoading || isSearching ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="h-[300px] rounded-lg bg-muted animate-pulse" />
               ))}
-          </div>
+            </div>
+          ) : error ? (
+            <div className="text-center text-destructive">
+              Failed to load prompts. Please try again later.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredPrompts?.filter(p => (p.likes ?? 0) > 0)
+                .sort((a, b) => (b.likes ?? 0) - (a.likes ?? 0))
+                .map((prompt) => (
+                  <PromptCard key={prompt.id} prompt={prompt} />
+                ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="recent">

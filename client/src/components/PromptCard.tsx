@@ -53,12 +53,16 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
   const [testing, setTesting] = useState(false);
   const [comments, setComments] = useState<PromptComment[]>([]);
+  const [hasVoted, setHasVoted] = useState<number>(0);
+  const [optimisticLikes, setOptimisticLikes] = useState<number>(prompt.likes ?? 0);
   
   useEffect(() => {
     if (prompt.id) {
       fetchComments();
+      // Reset optimistic likes when prompt changes
+      setOptimisticLikes(prompt.likes ?? 0);
     }
-  }, [prompt.id]);
+  }, [prompt.id, prompt.likes]);
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
 
@@ -137,6 +141,20 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
   const handleVote = async (value: 1 | -1) => {
     try {
+      // If clicking the same vote button again, we're removing the vote
+      const newVoteValue = hasVoted === value ? 0 : value;
+      const previousVote = hasVoted;
+      const previousLikes = optimisticLikes;
+
+      // Optimistically update UI
+      setHasVoted(newVoteValue);
+      setOptimisticLikes(prev => {
+        if (newVoteValue === 0) {
+          return prev - previousVote;
+        }
+        return prev - previousVote + newVoteValue;
+      });
+
       const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -145,6 +163,9 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       });
 
       if (!response.ok) {
+        // Revert optimistic updates on error
+        setHasVoted(previousVote);
+        setOptimisticLikes(previousLikes);
         throw new Error(await response.text());
       }
 
@@ -224,8 +245,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             className="gap-2"
             onClick={() => handleVote(1)}
           >
-            <ThumbsUp className="h-4 w-4" />
-            {(prompt.likes ?? 0) > 0 ? prompt.likes : ''}
+            <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
+            {optimisticLikes > 0 ? optimisticLikes : ''}
           </Button>
           <Button
             variant="ghost"
@@ -233,8 +254,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             className="gap-2"
             onClick={() => handleVote(-1)}
           >
-            <ThumbsDown className="h-4 w-4" />
-            {(prompt.likes ?? 0) < 0 ? Math.abs(prompt.likes ?? 0) : ''}
+            <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
+            {optimisticLikes < 0 ? Math.abs(optimisticLikes) : ''}
           </Button>
           <Button
             variant="ghost"
@@ -267,7 +288,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         <Button
           variant="ghost"
           size="sm"
-          className="gap-2 ml-auto"
+          className="gap-2"
           onClick={handleShare}
         >
           <Share2 className="h-4 w-4" />
