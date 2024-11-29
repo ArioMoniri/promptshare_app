@@ -35,10 +35,11 @@ export const comments = pgTable("comments", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const likes = pgTable("likes", {
+export const votes = pgTable("votes", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
   promptId: integer("prompt_id").references(() => prompts.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
+  value: integer("value").notNull(), // 1 for promote, -1 for downvote
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

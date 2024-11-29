@@ -55,6 +55,69 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Handle promote/downvote
+  app.post("/api/prompts/:id/vote", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    const promptId = parseInt(req.params.id);
+    const value = parseInt(req.body.value); // 1 for promote, -1 for downvote
+    
+    if (value !== 1 && value !== -1) {
+      return res.status(400).send("Invalid vote value");
+    }
+
+    try {
+      // Check if user has already voted
+      const [existingVote] = await db
+        .select()
+        .from(votes)
+        .where(eq(votes.promptId, promptId))
+        .where(eq(votes.userId, req.user!.id))
+        .limit(1);
+
+      if (existingVote) {
+        if (existingVote.value === value) {
+          // Remove vote if same value
+          await db
+            .delete(votes)
+            .where(eq(votes.id, existingVote.id));
+        } else {
+          // Update vote if different value
+          await db
+            .update(votes)
+            .set({ value })
+            .where(eq(votes.id, existingVote.id));
+        }
+      } else {
+        // Create new vote
+        await db
+          .insert(votes)
+          .values({
+            promptId,
+            userId: req.user!.id,
+            value,
+          });
+      }
+
+      // Update prompt score
+      const votesSum = await db
+        .select({ sum: sql`sum(value)` })
+        .from(votes)
+        .where(eq(votes.promptId, promptId));
+
+      await db
+        .update(prompts)
+        .set({ likes: votesSum[0].sum || 0 })
+        .where(eq(prompts.id, promptId));
+
+      res.json({ ok: true });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update vote" });
+    }
+  });
+
   app.post("/api/test-prompt", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");

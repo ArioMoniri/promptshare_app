@@ -2,7 +2,8 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Heart, MessageSquare, Share2 } from "lucide-react";
+import { ThumbsUp, ThumbsDown, MessageSquare, Share2, Copy, User } from "lucide-react";
+import { Link } from "wouter";
 import type { Prompt } from "@db/schema";
 import { formatDistanceToNow } from "date-fns";
 
@@ -21,11 +22,37 @@ interface PromptCardProps {
 export default function PromptCard({ prompt }: PromptCardProps) {
   const { toast } = useToast();
 
-  const handleLike = async () => {
-    // TODO: Implement like functionality
+  const handleVote = async (value: 1 | -1) => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value }),
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      toast({
+        title: "Success",
+        description: value === 1 ? "Promoted prompt" : "Downvoted prompt",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(prompt.content);
     toast({
-      title: "Liked",
-      description: "You liked this prompt",
+      title: "Copied",
+      description: "Prompt copied to clipboard",
     });
   };
 
@@ -40,12 +67,14 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="flex flex-row items-center gap-4">
-        <Avatar>
-          <AvatarImage src={prompt.user?.avatar || undefined} alt={prompt.user?.username || ""} />
-          <AvatarFallback>
-            {prompt.user?.username.charAt(0).toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
+        <Link href={`/profile/${prompt.user?.id}`}>
+          <Avatar className="cursor-pointer">
+            <AvatarImage src={prompt.user?.avatar || undefined} alt={prompt.user?.username || ""} />
+            <AvatarFallback>
+              {prompt.user?.username.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
         <div className="flex-1">
           <h3 className="font-semibold">{prompt.title}</h3>
           <p className="text-sm text-muted-foreground">
@@ -70,10 +99,28 @@ export default function PromptCard({ prompt }: PromptCardProps) {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={handleLike}
+            onClick={() => handleVote(1)}
           >
-            <Heart className="h-4 w-4" />
-            {prompt.likes}
+            <ThumbsUp className="h-4 w-4" />
+            {prompt.likes > 0 ? prompt.likes : ''}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleVote(-1)}
+          >
+            <ThumbsDown className="h-4 w-4" />
+            {prompt.likes < 0 ? Math.abs(prompt.likes) : ''}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={handleCopy}
+          >
+            <Copy className="h-4 w-4" />
+            Copy
           </Button>
           <Button variant="ghost" size="sm" className="gap-2">
             <MessageSquare className="h-4 w-4" />
