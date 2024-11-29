@@ -6,8 +6,16 @@ import { Heart, MessageSquare, Share2 } from "lucide-react";
 import type { Prompt } from "@db/schema";
 import { formatDistanceToNow } from "date-fns";
 
+type PromptWithUser = Prompt & {
+  user: {
+    id: number;
+    username: string;
+    avatar: string | null;
+  } | null;
+};
+
 interface PromptCardProps {
-  prompt: Prompt;
+  prompt: PromptWithUser;
 }
 
 export default function PromptCard({ prompt }: PromptCardProps) {

@@ -68,7 +68,15 @@ export type User = z.infer<typeof selectUserSchema>;
 export const insertPromptSchema = createInsertSchema(prompts);
 export const selectPromptSchema = createSelectSchema(prompts);
 export type InsertPrompt = z.infer<typeof insertPromptSchema>;
-export type Prompt = z.infer<typeof selectPromptSchema>;
+export const selectPromptWithUserSchema = selectPromptSchema.extend({
+  user: selectUserSchema.pick({
+    id: true,
+    username: true,
+    avatar: true
+  }).nullable(),
+});
+
+export type Prompt = z.infer<typeof selectPromptWithUserSchema>;
 
 export const insertCommentSchema = createInsertSchema(comments);
 export const selectCommentSchema = createSelectSchema(comments);

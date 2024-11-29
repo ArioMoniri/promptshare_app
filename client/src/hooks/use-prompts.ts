@@ -1,7 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Prompt, InsertPrompt } from "@db/schema";
 
-async function fetchPrompts(): Promise<Prompt[]> {
+type PromptWithUser = Prompt & {
+  user: {
+    id: number;
+    username: string;
+    avatar: string | null;
+  } | null;
+};
+
+async function fetchPrompts(): Promise<PromptWithUser[]> {
   const response = await fetch("/api/prompts");
   if (!response.ok) {
     throw new Error("Failed to fetch prompts");
@@ -26,7 +34,7 @@ async function createPrompt(prompt: InsertPrompt): Promise<Prompt> {
 export function usePrompts() {
   const queryClient = useQueryClient();
 
-  const { data: prompts, isLoading, error } = useQuery<Prompt[]>({
+  const { data: prompts, isLoading, error } = useQuery<PromptWithUser[]>({
     queryKey: ["prompts"],
     queryFn: fetchPrompts,
   });

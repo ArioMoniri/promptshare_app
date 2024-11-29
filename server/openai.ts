@@ -10,7 +10,7 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: "You are a helpful AI assistant testing a prompt."
+          content: "You are a helpful AI assistant testing a prompt. Please provide your response in JSON format."
         },
         {
           role: "user",
