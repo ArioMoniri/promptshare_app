@@ -33,29 +33,19 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
 
   const handleTest = async () => {
     if (!testInput) return;
-    
     setTesting(true);
     try {
-      // Replace variables in the prompt with actual test input
-      const processedPrompt = content.replace(/\{input\}/g, testInput);
-      const result = await testPrompt(processedPrompt);
-      
+      const result = await testPrompt(testInput);
       setTestHistory(prev => [...prev, {
         input: testInput,
         output: result.output,
         timestamp: new Date()
       }]);
-      
       setTestInput("");
-      
-      toast({
-        title: "Test successful",
-        description: "Your prompt works as expected",
-      });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Test failed",
+        title: "Error",
         description: error.message,
       });
     } finally {
@@ -79,10 +69,6 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
         content,
         description,
         tags: [],
-      });
-      toast({
-        title: "Success",
-        description: "Your prompt has been published",
       });
       onClose();
     } catch (error: any) {

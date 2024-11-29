@@ -103,11 +103,6 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       const newComment = await response.json();
       setComments(prev => [...prev, newComment]);
       setComment('');
-      
-      toast({
-        title: "Success",
-        description: "Comment added successfully",
-      });
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -121,24 +116,17 @@ export default function PromptCard({ prompt }: PromptCardProps) {
     if (!testInput) return;
     setTesting(true);
     try {
-      // Replace variables in the prompt with actual test input
-      const processedPrompt = prompt.content.replace(/\{input\}/g, testInput);
-      const result = await testPrompt(processedPrompt);
-      
+      const result = await testPrompt(testInput);
       setTestHistory(prev => [...prev, {
         input: testInput,
         output: result.output,
         timestamp: new Date()
       }]);
       setTestInput("");
-      toast({
-        title: "Test successful",
-        description: "Your prompt works as expected",
-      });
     } catch (error: any) {
       toast({
         variant: "destructive",
-        title: "Test failed",
+        title: "Error",
         description: error.message,
       });
     } finally {
@@ -176,10 +164,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         throw new Error(await response.text());
       }
 
-      toast({
-        title: "Success",
-        description: value === 1 ? "Promoted prompt" : "Downvoted prompt",
-      });
+      
     } catch (error: any) {
       toast({
         variant: "destructive",
