@@ -40,7 +40,7 @@ export default function Navigation({ user }: NavigationProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="flex items-center">
+                <Link href={`/profile/${user.id}`} className="flex items-center">
                   <User className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </Link>

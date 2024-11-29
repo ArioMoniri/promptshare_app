@@ -246,4 +246,32 @@ export function registerRoutes(app: Express) {
       res.status(500).send(error.message);
     }
   });
+
+  app.get("/api/users/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const [user] = await db
+        .select({
+          id: users.id,
+          username: users.username,
+          name: users.name,
+          surname: users.surname,
+          avatar: users.avatar,
+          createdAt: users.createdAt,
+          // Don't include email for other users' profiles
+          email: sql`CASE WHEN ${users.id} = ${req.user?.id} THEN ${users.email} ELSE NULL END`,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user profile" });
+    }
+  });
 }

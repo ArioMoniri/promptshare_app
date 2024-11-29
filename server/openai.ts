@@ -10,15 +10,14 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: "You are a helpful assistant. Please provide clear and direct responses."
+          content: "You are a helpful assistant. Provide direct, accurate responses."
         },
         {
           role: "user",
           content: prompt
         }
       ],
-      temperature: 0.7,
-      max_tokens: 2000
+      temperature: 0.7
     });
 
     return {
