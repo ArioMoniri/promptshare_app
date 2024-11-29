@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useOpenAI } from "../hooks/use-openai";
+import { usePrompts } from "../hooks/use-prompts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Bot, Send, User } from "lucide-react";
@@ -26,6 +27,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
   const { testPrompt } = useOpenAI();
+  const { createPrompt } = usePrompts();
   const { toast } = useToast();
   const [testing, setTesting] = useState(false);
 
@@ -71,12 +73,25 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
       return;
     }
 
-    // TODO: Implement save functionality
-    toast({
-      title: "Saved",
-      description: "Your prompt has been saved",
-    });
-    onClose();
+    try {
+      await createPrompt({
+        title,
+        content,
+        description,
+        tags: [],
+      });
+      toast({
+        title: "Success",
+        description: "Your prompt has been published",
+      });
+      onClose();
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
   };
 
   return (
@@ -157,6 +172,9 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
 
             {/* Input area */}
             <div className="p-4 border-t">
+              <Button onClick={() => setTestInput(content)} variant="outline" className="mb-2">
+                Test Current Prompt
+              </Button>
               <div className="flex gap-2">
                 <Input
                   value={testInput}

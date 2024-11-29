@@ -41,7 +41,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader className="flex flex-row items-center gap-4">
         <Avatar>
-          <AvatarImage src={prompt.user?.avatar} />
+          <AvatarImage src={prompt.user?.avatar || undefined} alt={prompt.user?.username || ""} />
           <AvatarFallback>
             {prompt.user?.username.charAt(0).toUpperCase()}
           </AvatarFallback>

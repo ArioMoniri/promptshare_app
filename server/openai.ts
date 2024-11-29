@@ -10,14 +10,13 @@ class OpenAIService {
       messages: [
         {
           role: "system",
-          content: "You are a helpful AI assistant testing a prompt. Please provide your response in JSON format."
+          content: "You are a helpful AI assistant."
         },
         {
           role: "user",
           content: prompt
         }
-      ],
-      response_format: { type: "json_object" }
+      ]
     });
 
     return {

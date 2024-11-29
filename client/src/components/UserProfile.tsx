@@ -72,7 +72,7 @@ export default function UserProfile() {
         <CardContent className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={user?.avatar} />
+              <AvatarImage src={user?.avatar || undefined} alt={user?.username || ""} />
               <AvatarFallback>
                 {user?.username.charAt(0).toUpperCase()}
               </AvatarFallback>
