@@ -191,7 +191,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         <div className="flex-1">
           <h3 className="font-semibold">{prompt.title}</h3>
           <p className="text-sm text-muted-foreground">
-            by {prompt.user?.username} •{" "}
+            by <Link href={`/profile/${prompt.user?.id}`} className="hover:underline cursor-pointer">{prompt.user?.username}</Link> •{" "}
             {formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true })}
           </p>
         </div>
@@ -281,7 +281,11 @@ export default function PromptCard({ prompt }: PromptCardProps) {
                     <AvatarFallback>{comment.user?.username[0]}</AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
-                    <p className="text-sm font-medium">{comment.user?.username}</p>
+                    <Link href={`/profile/${comment.user?.id}`}>
+                      <p className="text-sm font-medium hover:underline cursor-pointer">
+                        {comment.user?.username}
+                      </p>
+                    </Link>
                     <p className="text-sm text-muted-foreground">{comment.content}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}

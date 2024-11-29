@@ -39,16 +39,22 @@ export default function UserProfile() {
       try {
         const response = await fetch(`/api/users/${id}`);
         if (!response.ok) {
-          throw new Error(await response.text());
+          const errorMessage = await response.text();
+          throw new Error(errorMessage || `Failed to fetch user profile (${response.status})`);
         }
         const data = await response.json();
+        if (!data || !data.id) {
+          throw new Error('Invalid user data received');
+        }
         setProfileUser(data);
       } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: "Failed to fetch user profile",
+          description: error.message || "Failed to fetch user profile",
         });
+        // Reset profile user to ensure clean state
+        setProfileUser(null);
       }
     };
 
