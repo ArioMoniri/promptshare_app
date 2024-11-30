@@ -65,9 +65,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   useEffect(() => {
     if (prompt.id) {
       fetchComments();
-      setOptimisticLikes(prompt.likes ?? 0);
     }
-  }, [prompt.id, prompt.likes]);
+  }, [prompt.id]);
 
   const fetchComments = async () => {
     try {
@@ -140,7 +139,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       // If clicking the same vote button again, we're removing the vote
       const newVoteValue = hasVoted === value ? 0 : value;
       const previousVote = hasVoted;
-      const previousLikes = optimisticLikes;
+      const previousUpvotes = optimisticUpvotes;
+      const previousDownvotes = optimisticDownvotes;
 
       // Optimistically update UI
       setHasVoted(newVoteValue);
@@ -160,11 +160,10 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       if (!response.ok) {
         // Revert optimistic updates on error
         setHasVoted(previousVote);
-        setOptimisticLikes(previousLikes);
+        setOptimisticUpvotes(previousUpvotes);
+        setOptimisticDownvotes(previousDownvotes);
         throw new Error(await response.text());
       }
-
-      
     } catch (error: any) {
       toast({
         variant: "destructive",
