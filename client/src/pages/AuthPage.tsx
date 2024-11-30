@@ -35,6 +35,12 @@ export default function AuthPage() {
           title: "Error",
           description: result.message,
         });
+      } else if (!isLogin) {
+        // After successful registration
+        const userResponse = await fetch('/api/user');
+        const userData = await userResponse.json();
+        // Redirect to the user's own profile
+        window.location.href = `/profile/${userData.id}`;
       }
     } catch (error: any) {
       toast({

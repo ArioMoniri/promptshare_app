@@ -64,6 +64,20 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   useEffect(() => {
     if (prompt.id) {
       fetchComments();
+      // Add WebSocket or polling mechanism to keep votes in sync
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`/api/prompts/${prompt.id}`);
+          if (!response.ok) throw new Error('Failed to fetch prompt');
+          const data = await response.json();
+          setOptimisticUpvotes(data.upvotes);
+          setOptimisticDownvotes(data.downvotes);
+        } catch (error) {
+          console.error('Failed to sync votes:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+
+      return () => clearInterval(interval);
     }
   }, [prompt.id]);
 
