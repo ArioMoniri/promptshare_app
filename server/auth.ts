@@ -169,47 +169,41 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", async (req, res) => {
     if (!req.body.username || !req.body.password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    console.log('Login attempt for username:', req.body.username);
-    
-    passport.authenticate('local', (err: any, user: any, info: IVerifyOptions | undefined) => {
-      if (err) {
-        console.error('Login error:', err);
-        return res.status(500).json({ message: 'Internal server error' });
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, req.body.username))
+        .limit(1);
+
+      if (!user || !(await crypto.compare(req.body.password, user.password))) {
+        return res.status(401).json({ message: 'Invalid credentials' });
       }
-      
-      if (!user) {
-        console.log('Login failed:', info?.message);
-        return res.status(401).json({ message: info?.message || 'Invalid credentials' });
-      }
-      
-      req.logIn(user, (err) => {
-        if (err) {
-          console.error('Session error:', err);
-          return res.status(500).json({ message: 'Failed to establish session' });
-        }
-        
-        // Set session data
-        req.session.userId = user.id;
-        req.session.username = user.username;
-        
-        // Save session explicitly
-        req.session.save((err) => {
-          if (err) {
-            console.error('Session save error:', err);
-            return res.status(500).json({ message: 'Failed to save session' });
-          }
-          
-          console.log('Login successful for user:', user.username);
-          const { password: _, ...userData } = user;
-          return res.json({ ok: true, user: userData });
+
+      // Set session data
+      req.session.userId = user.id;
+      req.session.username = user.username;
+
+      // Login using passport
+      await new Promise<void>((resolve, reject) => {
+        req.login(user, (err) => {
+          if (err) reject(err);
+          else resolve();
         });
       });
-    })(req, res, next);
+
+      // Return user data without password
+      const { password: _, ...userData } = user;
+      res.json({ ok: true, user: userData });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'Internal server error' });
+    }
   });
 
   app.post("/api/logout", (req, res) => {

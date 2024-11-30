@@ -35,16 +35,19 @@ export default function AuthPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      const result = isLogin ? await login(data) : await register(data);
+      const result = isLogin 
+        ? await login({ 
+            username: data.username, 
+            password: data.password 
+          })
+        : await register(data);
+
       if (!result.ok) {
         toast({
           variant: "destructive",
           title: "Error",
           description: result.message,
         });
-      } else {
-        // Navigate directly to home page without profile redirect
-        window.location.href = '/';
       }
     } catch (error: any) {
       toast({
