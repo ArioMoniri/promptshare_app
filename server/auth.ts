@@ -33,8 +33,7 @@ declare global {
   namespace Express {
     interface User extends SelectUser {}
   }
-  
-  }
+}
 
 declare module 'express-session' {
   interface SessionData {
@@ -51,6 +50,8 @@ export function setupAuth(app: Express) {
     saveUninitialized: false,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
+      httpOnly: true,
+      sameSite: 'lax'
     },
     store: new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -60,8 +61,8 @@ export function setupAuth(app: Express) {
   if (app.get("env") === "production") {
     app.set("trust proxy", 1);
     sessionSettings.cookie = {
+      ...sessionSettings.cookie,
       secure: true,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
     };
   }
 
@@ -79,12 +80,12 @@ export function setupAuth(app: Express) {
           .limit(1);
 
         if (!user) {
-          return done(null, false, { message: "Incorrect username." });
+          return done(null, false, { message: "Invalid credentials" });
         }
 
         const isMatch = await crypto.compare(password, user.password);
         if (!isMatch) {
-          return done(null, false, { message: "Incorrect password." });
+          return done(null, false, { message: "Invalid credentials" });
         }
 
         return done(null, user);
@@ -160,29 +161,23 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", async (req, res) => {
-    const { username, password } = req.body;
-    try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.username, username))
-        .limit(1);
-
-      if (!user || !await crypto.compare(password, user.password)) {
-        return res.status(401).json({ message: "Invalid credentials" });
+  app.post("/api/login", (req, res, next) => {
+    passport.authenticate('local', (err: any, user: any, info: IVerifyOptions | undefined) => {
+      if (err) {
+        return next(err);
       }
-
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      
-      // Return user data without sensitive information
-      const { password: _, ...userData } = user;
-      res.json({ ok: true, user: userData });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: "Failed to login" });
-    }
+      if (!user) {
+        return res.status(401).json({ message: info?.message || 'Invalid credentials' });
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          return next(err);
+        }
+        // Return user data without sensitive information
+        const { password: _, ...userData } = user;
+        return res.json({ ok: true, user: userData });
+      });
+    })(req, res, next);
   });
 
   app.post("/api/logout", (req, res) => {
