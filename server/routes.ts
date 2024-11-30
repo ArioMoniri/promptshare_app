@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { prompts, votes, users, comments } from "@db/schema";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import { testPrompt } from "./openai";
 
 export function registerRoutes(app: Express) {
@@ -10,7 +10,9 @@ export function registerRoutes(app: Express) {
 
   app.get("/api/prompts", async (req, res) => {
     try {
-      const allPrompts = await db
+      const { sort = 'recent', search = '' } = req.query;
+      
+      let query = db
         .select({
           id: prompts.id,
           title: prompts.title,
@@ -19,6 +21,7 @@ export function registerRoutes(app: Express) {
           tags: prompts.tags,
           upvotes: prompts.upvotes,
           downvotes: prompts.downvotes,
+          category: prompts.category,
           version: prompts.version,
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
@@ -31,11 +34,29 @@ export function registerRoutes(app: Express) {
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id));
-      
-      if (!allPrompts) {
-        return res.status(404).json({ error: "No prompts found" });
+
+      // Add search filter if provided
+      if (search) {
+        query = query.where(
+          sql`${prompts.title} ILIKE ${`%${search}%`} OR 
+              ${prompts.content} ILIKE ${`%${search}%`} OR 
+              ${prompts.tags} ?& ${JSON.stringify([search])}`
+        );
       }
-      
+
+      // Add sorting
+      switch (sort) {
+        case 'popular':
+          query = query.orderBy(desc(prompts.upvotes));
+          break;
+        case 'controversial':
+          query = query.orderBy(desc(sql`${prompts.upvotes} + ${prompts.downvotes}`));
+          break;
+        default: // 'recent'
+          query = query.orderBy(desc(prompts.createdAt));
+      }
+
+      const allPrompts = await query;
       res.json(allPrompts);
     } catch (error: any) {
       console.error('Error fetching prompts:', error);

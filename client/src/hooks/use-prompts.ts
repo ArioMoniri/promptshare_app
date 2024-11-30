@@ -9,8 +9,18 @@ type PromptWithUser = Prompt & {
   } | null;
 };
 
-async function fetchPrompts(): Promise<PromptWithUser[]> {
-  const response = await fetch("/api/prompts");
+interface UsePromptsOptions {
+  sort?: 'recent' | 'popular' | 'controversial';
+  search?: string;
+}
+
+async function fetchPrompts(options: UsePromptsOptions = {}): Promise<PromptWithUser[]> {
+  const { sort = 'recent', search = '' } = options;
+  const params = new URLSearchParams();
+  if (sort) params.set('sort', sort);
+  if (search) params.set('search', search);
+  
+  const response = await fetch(`/api/prompts?${params}`);
   if (!response.ok) {
     throw new Error("Failed to fetch prompts");
   }
@@ -22,6 +32,7 @@ async function createPrompt(prompt: InsertPrompt): Promise<Prompt> {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(prompt),
+    credentials: 'include',
   });
   
   if (!response.ok) {
@@ -31,18 +42,18 @@ async function createPrompt(prompt: InsertPrompt): Promise<Prompt> {
   return response.json();
 }
 
-export function usePrompts() {
+export function usePrompts(options: UsePromptsOptions = {}) {
   const queryClient = useQueryClient();
 
   const { data: prompts, isLoading, error } = useQuery<PromptWithUser[]>({
-    queryKey: ["prompts"],
-    queryFn: fetchPrompts,
+    queryKey: ['prompts', options],
+    queryFn: () => fetchPrompts(options),
   });
 
   const createMutation = useMutation({
     mutationFn: createPrompt,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["prompts"] });
+      queryClient.invalidateQueries({ queryKey: ['prompts'] });
     },
   });
 
