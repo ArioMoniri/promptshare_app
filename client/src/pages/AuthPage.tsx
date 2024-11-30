@@ -103,19 +103,15 @@ export default function AuthPage() {
   return (
     <div className="relative min-h-screen flex items-center justify-center">
       {/* Video Background */}
-      <video
+      <video 
         ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        className="videoTag absolute top-0 left-0 w-full h-full object-cover -z-10" 
+        autoPlay 
+        loop 
+        muted 
         playsInline
-        muted
-        preload="auto"
-        loop={false}
       >
-        <source 
-          src="/assets/videos/Gen 3 Alpha Turbo Adventure.mp4" 
-          type="video/mp4"
-          onError={(e) => console.error('Source error:', e)} 
-        />
+        <source src="/videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
         Your browser does not support the video tag.
       </video>
 
