@@ -69,12 +69,12 @@ export default function PromptCard({ prompt }: PromptCardProps) {
           const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
             credentials: 'include'
           });
-          if (response.ok) {
-            const { value } = await response.json();
-            setHasVoted(value);
-          }
+          if (!response.ok) return; // Silently fail if not authenticated
+          const { value } = await response.json();
+          setHasVoted(value);
         } catch (error) {
-          console.error('Failed to fetch vote state:', error);
+          // Silently handle errors for vote state
+          console.debug('Vote state fetch failed:', error);
         }
       };
       fetchVoteState();

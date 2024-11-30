@@ -36,10 +36,7 @@ export default function AuthPage() {
           description: result.message,
         });
       } else {
-        // Always fetch current user after login/register
-        const userResponse = await fetch('/api/user');
-        const userData = await userResponse.json();
-        // Navigate to home page first
+        // Navigate directly to home page
         window.location.href = '/';
       }
     } catch (error: any) {
