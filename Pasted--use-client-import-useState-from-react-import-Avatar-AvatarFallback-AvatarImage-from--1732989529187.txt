@@ -1,0 +1,99 @@
+'use client'
+
+import { useState } from 'react'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import PromptCard from '../../components/PromptCard'
+
+// This would typically come from an API based on the username
+const mockUser = {
+  username: 'alice',
+  name: 'Alice Johnson',
+  image: '/placeholder-avatar.jpg',
+  bio: 'AI enthusiast and prompt engineer',
+  followers: 1234,
+  following: 567,
+  prompts: [
+    {
+      id: '1',
+      title: 'Creative Writing Prompt',
+      content: 'Write a short story about a world where gravity reverses every 12 hours.',
+      author: {
+        name: 'Alice Johnson',
+        image: '/placeholder-avatar.jpg',
+      },
+      promotions: 42,
+      comments: 7,
+      issues: 1,
+      forks: 3,
+      stars: 15,
+      tags: ['writing', 'creative', 'sci-fi'],
+    },
+    // Add more prompts as needed
+  ],
+}
+
+export default function UserProfile({ params }: { params: { username: string } }) {
+  const [openAIKey, setOpenAIKey] = useState('')
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <Card>
+        <CardHeader>
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-20 h-20">
+              <AvatarImage src={mockUser.image} alt={mockUser.name} />
+              <AvatarFallback>{mockUser.name.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-2xl">{mockUser.name}</CardTitle>
+              <CardDescription>@{mockUser.username}</CardDescription>
+              <p className="text-sm text-gray-500 mt-2">{mockUser.bio}</p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between mb-4">
+            <span>{mockUser.followers} followers</span>
+            <span>{mockUser.following} following</span>
+            <Button>Follow</Button>
+          </div>
+          <Tabs defaultValue="prompts">
+            <TabsList>
+              <TabsTrigger value="prompts">Prompts</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            <TabsContent value="prompts">
+              <div className="grid gap-6 md:grid-cols-2">
+                {mockUser.prompts.map((prompt) => (
+                  <PromptCard key={prompt.id} {...prompt} />
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="settings">
+              <Card>
+                <CardHeader>
+                  <CardTitle>OpenAI API Key</CardTitle>
+                  <CardDescription>Add your OpenAI API key to test prompts</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    type="password"
+                    placeholder="Enter your OpenAI API key"
+                    value={openAIKey}
+                    onChange={(e) => setOpenAIKey(e.target.value)}
+                  />
+                  <Button className="mt-4">Save API Key</Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+

@@ -308,34 +308,8 @@ export function registerRoutes(app: Express) {
       return res.status(400).send("Please add your OpenAI API key in your profile settings");
     }
 
-    const { input, promptId } = req.body;
-    
-    if (!input || !promptId) {
-      return res.status(400).send("Input text and prompt ID are required");
-    }
-
     try {
-      // Get the prompt from database
-      const [promptData] = await db
-        .select()
-        .from(prompts)
-        .where(eq(prompts.id, promptId))
-        .limit(1);
-
-      if (!promptData) {
-        return res.status(404).send("Prompt not found");
-      }
-
-      const result = await testPrompt(input, promptData.content, req.user.apiKey);
-
-      // Store the result
-      await db.insert(promptResults).values({
-        promptId,
-        userId: req.user.id,
-        input,
-        output: result.output
-      });
-
+      const result = await testPrompt(req.body.input, req.user.apiKey);
       res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);
