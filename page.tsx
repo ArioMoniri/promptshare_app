@@ -1,31 +1,52 @@
 'use client'
 
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import TestPrompt from '@/app/components/TestPrompt'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import PromptCard from '@/app/components/PromptCard'
 
-// This would typically come from an API based on the prompt ID
-const mockPrompt = {
-  id: '1',
-  title: 'Creative Writing Prompt',
-  description: 'Write a short story about a world where gravity reverses every 12 hours.',
-  content: 'You are a creative writer. Write a short story about a world where gravity reverses every 12 hours. Consider the implications on daily life, architecture, and society.',
-}
+// Mock data - replace with actual data fetching
+const categories = ['Writing', 'Coding', 'Design', 'Business', 'Other']
+const mockPrompts = [/* ... */]
 
-export default function TestPromptPage({ params }: { params: { id: string } }) {
+export default function CategorizedPrompts() {
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
+
+  const filteredPrompts = mockPrompts.filter(prompt => 
+    (!selectedCategory || prompt.category === selectedCategory) &&
+    (prompt.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+     prompt.content.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">{mockPrompt.title}</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Prompt Description</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p>{mockPrompt.description}</p>
-          </CardContent>
-        </Card>
-        <TestPrompt initialPrompt={mockPrompt.content} />
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Prompts by Category</h1>
+      <div className="flex space-x-4 mb-4">
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Categories</SelectItem>
+            {categories.map(category => (
+              <SelectItem key={category} value={category}>{category}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          type="text"
+          placeholder="Search prompts..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="flex-grow"
+        />
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {filteredPrompts.map((prompt) => (
+          <PromptCard key={prompt.id} {...prompt} />
+        ))}
       </div>
     </div>
   )

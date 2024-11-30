@@ -14,6 +14,7 @@ import Header from "./components/Header";
 import LoginPage from "./app/auth/login/page";
 import SignupPage from "./app/auth/signup/page";
 import ResetPasswordPage from "./app/auth/reset-password/page";
+import CategoriesPage from "./pages/CategoriesPage";
 
 function Router() {
   const { user, isLoading } = useUser();
@@ -47,6 +48,7 @@ function Router() {
           <Route path="/" component={HomePage} />
           <Route path="/profile/:username" component={ProfilePage} />
           <Route path="/create" component={PromptEditor} />
+          <Route path="/categories" component={CategoriesPage} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>
