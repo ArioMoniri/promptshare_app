@@ -43,7 +43,7 @@ export default function AuthPage() {
           description: result.message,
         });
       } else {
-        // Navigate directly to home page
+        // Navigate directly to home page without profile redirect
         window.location.href = '/';
       }
     } catch (error: any) {

@@ -44,15 +44,15 @@ export default function HomePage() {
       });
       
       // Filter prompts based on current tab
-      const tabPrompts = activeTab === 'trending' 
-        ? matchingPrompts
-            .sort((a, b) => {
-              const aScore = (a.upvotes ?? 0) + (a.comments?.length ?? 0);
-              const bScore = (b.upvotes ?? 0) + (b.comments?.length ?? 0);
-              return bScore - aScore;
-            })
-        : matchingPrompts
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      const tabPrompts = activeTab === 'trending'
+        ? [...matchingPrompts].sort((a, b) => {
+            const aScore = (a.upvotes ?? 0) + (a.comments?.length ?? 0);
+            const bScore = (b.upvotes ?? 0) + (b.comments?.length ?? 0);
+            return bScore - aScore;
+          })
+        : [...matchingPrompts].sort((a, b) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
       
       setIsSearching(false);
       return {
