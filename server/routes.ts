@@ -45,19 +45,18 @@ export function registerRoutes(app: Express) {
       }
 
       // Add sorting
-      let sortedQuery = query;
       switch (sort) {
         case 'popular':
-          sortedQuery = query.orderBy(prompts.upvotes);
+          query = query.orderBy(desc(prompts.upvotes));
           break;
         case 'controversial':
-          sortedQuery = query.orderBy(sql`${prompts.upvotes} + ${prompts.downvotes}`);
+          query = query.orderBy(desc(sql`${prompts.upvotes} + ${prompts.downvotes}`));
           break;
         default: // 'recent'
-          sortedQuery = query.orderBy(prompts.createdAt);
+          query = query.orderBy(desc(prompts.createdAt));
       }
 
-      const allPrompts = await sortedQuery;
+      const allPrompts = await query;
       res.json(allPrompts);
     } catch (error: any) {
       console.error('Error fetching prompts:', error);
