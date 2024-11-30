@@ -24,7 +24,6 @@ import {
   Bot,
   Send,
   Loader2,
-  User
 } from "lucide-react";
 import type { Prompt } from "@db/schema";
 
@@ -136,7 +135,6 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
   const handleVote = async (value: 1 | -1) => {
     try {
-      // If clicking the same vote button again, we're removing the vote
       const newVoteValue = hasVoted === value ? 0 : value;
       const previousVote = hasVoted;
       const previousUpvotes = optimisticUpvotes;
@@ -145,9 +143,11 @@ export default function PromptCard({ prompt }: PromptCardProps) {
       // Optimistically update UI
       setHasVoted(newVoteValue);
       if (value === 1) {
-        setOptimisticUpvotes(prev => prev + (newVoteValue === 1 ? 1 : -1));
+        if (previousVote === -1) setOptimisticDownvotes(prev => prev - 1);
+        setOptimisticUpvotes(prev => newVoteValue === 1 ? prev + 1 : prev - 1);
       } else {
-        setOptimisticDownvotes(prev => prev + (newVoteValue === -1 ? 1 : -1));
+        if (previousVote === 1) setOptimisticUpvotes(prev => prev - 1);
+        setOptimisticDownvotes(prev => newVoteValue === -1 ? prev + 1 : prev - 1);
       }
 
       const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
@@ -238,7 +238,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               onClick={() => handleVote(1)}
             >
               <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
-              {prompt.upvotes > 0 ? prompt.upvotes : ''}
+              {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
             </Button>
             <Button
               variant="ghost"
@@ -247,7 +247,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               onClick={() => handleVote(-1)}
             >
               <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
-              {prompt.downvotes > 0 ? prompt.downvotes : ''}
+              {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
             </Button>
             <Button
               variant="ghost"
@@ -385,7 +385,6 @@ export default function PromptCard({ prompt }: PromptCardProps) {
                 </Button>
               </div>
             </div>
-            
             <ScrollArea className="h-[500px] border rounded-lg">
               <div className="space-y-4 p-4">
                 {testHistory.map((result, index) => (

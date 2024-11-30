@@ -78,7 +78,18 @@ export const selectPromptWithUserSchema = selectPromptSchema.extend({
   }).nullable(),
 });
 
-export type Prompt = z.infer<typeof selectPromptWithUserSchema>;
+export type Prompt = z.infer<typeof selectPromptWithUserSchema> & {
+  comments?: Array<{
+    id: number;
+    content: string;
+    createdAt: string;
+    user: {
+      id: number;
+      username: string;
+      avatar: string | null;
+    } | null;
+  }>;
+};
 
 export const insertCommentSchema = createInsertSchema(comments);
 export const selectCommentSchema = createSelectSchema(comments);

@@ -29,7 +29,7 @@ export default function HomePage() {
       const query = searchQuery.toLowerCase();
       
       // Find matching profiles
-      const profiles = new Set();
+      const profiles = new Set<{ id: number; username: string; avatar: string | null }>();
       const matchingPrompts = prompts.filter(prompt => {
         const matches = 
           prompt.title?.toLowerCase().includes(query) ||
