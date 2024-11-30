@@ -1,0 +1,160 @@
+'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ThumbsUp, ThumbsDown, MessageSquare, AlertTriangle, GitFork, Star, Share2, Copy } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { motion } from 'framer-motion'
+
+interface PromptCardProps {
+  id: string
+  title: string
+  content: string
+  author: {
+    name: string
+    image: string
+  }
+  category: string
+  promotions: number
+  downvotes: number
+  comments: number
+  issues: number
+  forks: number
+  stars: number
+  tags: string[]
+  version: string
+  compact?: boolean
+}
+
+export default function PromptCard({ id, title, content, author, category, promotions, downvotes, comments, issues, forks, stars, tags, version, compact = false }: PromptCardProps) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(content)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const AnimatedButton = motion(Button)
+
+  return (
+    <Card className={cn("w-full", compact && "p-4")}>
+      <CardHeader className={cn(compact && "p-0 pb-4")}>
+        <div className="flex items-center space-x-4">
+          <Avatar>
+            <AvatarImage src={author.image} alt={author.name} />
+            <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
+          </Avatar>
+          <div className="flex-grow">
+            <CardTitle className={cn("text-lg", compact && "text-base")}>{title}</CardTitle>
+            <p className="text-sm text-muted-foreground">by {author.name}</p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleCopy}>
+            {copied ? (
+              <span className="text-green-500">Copied!</span>
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className={cn(compact && "p-0")}>
+        <p className={cn("text-foreground mb-4", compact && "text-sm")}>{content.substring(0, compact ? 50 : 100)}...</p>
+        <div className="flex flex-wrap gap-2 mb-2">
+          <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs">
+            {category}
+          </span>
+          {tags.map((tag) => (
+            <span key={tag} className="bg-secondary/10 text-secondary px-2 py-1 rounded-full text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground">Version: {version}</p>
+      </CardContent>
+      <CardFooter className={cn("flex justify-between flex-wrap gap-2", compact && "p-0 pt-4")}>
+        <div className="flex space-x-2">
+          <AnimatedButton
+            variant="ghost"
+            size="sm"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute inset-0 bg-primary"
+              initial={{ scale: 0, opacity: 0.5 }}
+              whileTap={{ scale: 1, opacity: 0.4 }}
+              transition={{ duration: 0.5 }}
+            />
+            <ThumbsUp className="mr-2 h-4 w-4" />
+            {promotions}
+          </AnimatedButton>
+          <AnimatedButton
+            variant="ghost"
+            size="sm"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="relative overflow-hidden"
+          >
+            <motion.div
+              className="absolute inset-0 bg-primary"
+              initial={{ scale: 0, opacity: 0.5 }}
+              whileTap={{ scale: 1, opacity: 0.4 }}
+              transition={{ duration: 0.5 }}
+            />
+            <ThumbsDown className="mr-2 h-4 w-4" />
+            {downvotes}
+          </AnimatedButton>
+        </div>
+        {!compact && (
+          <>
+            <Button variant="ghost" size="sm">
+              <MessageSquare className="mr-2 h-4 w-4" />
+              {comments}
+            </Button>
+            <Button variant="ghost" size="sm">
+              <AlertTriangle className="mr-2 h-4 w-4" />
+              {issues}
+            </Button>
+            <Button variant="ghost" size="sm">
+              <GitFork className="mr-2 h-4 w-4" />
+              {forks}
+            </Button>
+          </>
+        )}
+        <AnimatedButton
+          variant="ghost"
+          size="sm"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="relative overflow-hidden"
+        >
+          <motion.div
+            className="absolute inset-0 bg-primary"
+            initial={{ scale: 0, opacity: 0.5 }}
+            whileTap={{ scale: 1, opacity: 0.4 }}
+            transition={{ duration: 0.5 }}
+          />
+          <Star className="mr-2 h-4 w-4" />
+          {stars}
+        </AnimatedButton>
+        {!compact && (
+          <>
+            <Button variant="ghost" size="sm">
+              <Share2 className="mr-2 h-4 w-4" />
+              Share
+            </Button>
+            <Button asChild>
+              <Link href={`/prompt/${id}`}>View</Link>
+            </Button>
+          </>
+        )}
+      </CardFooter>
+    </Card>
+  )
+}
+

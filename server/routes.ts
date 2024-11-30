@@ -97,9 +97,13 @@ export function registerRoutes(app: Express) {
       const [prompt] = await db
         .insert(prompts)
         .values({
-          ...req.body,
-          userId: req.user!.id,
+          title: req.body.title,
+          content: req.body.content,
+          description: req.body.description,
+          category: req.body.category,
           version: req.body.version || "1.0.0",
+          tags: req.body.tags || [],
+          userId: req.user!.id,
         })
         .returning();
       res.json(prompt);
