@@ -239,7 +239,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               onClick={() => handleVote(1)}
             >
               <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
-              {optimisticLikes > 0 ? optimisticLikes : ''}
+              {prompt.upvotes > 0 ? prompt.upvotes : ''}
             </Button>
             <Button
               variant="ghost"
@@ -248,7 +248,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               onClick={() => handleVote(-1)}
             >
               <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
-              {optimisticLikes < 0 ? Math.abs(optimisticLikes) : ''}
+              {prompt.downvotes > 0 ? prompt.downvotes : ''}
             </Button>
             <Button
               variant="ghost"

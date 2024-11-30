@@ -119,17 +119,21 @@ export function registerRoutes(app: Express) {
             });
         }
 
-        // Update prompt score
-        const [{ sum }] = await tx
+        // Update upvotes and downvotes counts
+        const [{ upvotes, downvotes }] = await tx
           .select({
-            sum: sql<number>`COALESCE(SUM(value), 0)`
+            upvotes: sql<number>`COALESCE(SUM(CASE WHEN value = 1 THEN 1 ELSE 0 END), 0)`,
+            downvotes: sql<number>`COALESCE(SUM(CASE WHEN value = -1 THEN 1 ELSE 0 END), 0)`
           })
           .from(votes)
           .where(eq(votes.promptId, promptId));
 
         await tx
           .update(prompts)
-          .set({ likes: sum })
+          .set({ 
+            upvotes,
+            downvotes
+          })
           .where(eq(prompts.id, promptId));
       });
 
