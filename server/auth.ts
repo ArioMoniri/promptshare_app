@@ -33,6 +33,14 @@ declare global {
   namespace Express {
     interface User extends SelectUser {}
   }
+  
+  }
+
+declare module 'express-session' {
+  interface SessionData {
+    userId?: number;
+    username?: string;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -152,24 +160,29 @@ export function setupAuth(app: Express) {
     }
   });
 
-  app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: Express.User, info: IVerifyOptions) => {
-      if (err) {
-        return next(err);
+  app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+    try {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username))
+        .limit(1);
+
+      if (!user || !await crypto.compare(password, user.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      if (!user) {
-        return res.status(400).send(info.message ?? "Login failed");
-      }
-
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-
-        return res.json({ ok: true });
-      });
-    })(req, res, next);
+      req.session.userId = user.id;
+      req.session.username = user.username;
+      
+      // Return user data without sensitive information
+      const { password: _, ...userData } = user;
+      res.json({ ok: true, user: userData });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: "Failed to login" });
+    }
   });
 
   app.post("/api/logout", (req, res) => {

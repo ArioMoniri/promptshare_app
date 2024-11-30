@@ -3,7 +3,7 @@ import { setupAuth } from "./auth";
 import { db } from "../db";
 import { prompts, votes, users, comments } from "@db/schema";
 import { eq, sql } from "drizzle-orm";
-import { openai } from "./openai";
+import { testPrompt } from "./openai";
 
 export function registerRoutes(app: Express) {
   setupAuth(app);
@@ -283,23 +283,12 @@ export function registerRoutes(app: Express) {
       return res.status(401).send("Not authenticated");
     }
 
-    const { prompt } = req.body;
-    if (!prompt) {
-      return res.status(400).send("Prompt is required");
+    if (!req.user.apiKey) {
+      return res.status(400).send("Please add your OpenAI API key in your profile settings");
     }
 
     try {
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, req.user!.id))
-        .limit(1);
-
-      if (!user.apiKey) {
-        return res.status(400).send("OpenAI API key not set");
-      }
-
-      const result = await openai.test(prompt, user.apiKey);
+      const result = await testPrompt(req.body.input, req.user.apiKey);
       res.json(result);
     } catch (error: any) {
       res.status(500).send(error.message);
