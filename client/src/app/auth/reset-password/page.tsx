@@ -10,6 +10,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useToast } from '@/hooks/use-toast'
 import { Link } from 'wouter'
 import { z } from 'zod'
+import { Loader2 } from "lucide-react"
 
 const resetSchema = z.object({
   email: z.string().email()
@@ -74,7 +75,14 @@ export default function ResetPasswordPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Sending..." : "Send Reset Link"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Send Reset Link"
+                )}
               </Button>
             </form>
           </Form>

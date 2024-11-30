@@ -1,34 +1,59 @@
-import PromptCard from './components/PromptCard'
+'use client'
 
-// This would typically come from a database
-const mockPrompts = [
-  {
-    id: '1',
-    title: 'Creative Writing Prompt',
-    content: 'Write a short story about a world where gravity reverses every 12 hours.',
-    author: 'Alice Johnson',
-    promotions: 42,
-    comments: 7,
-    issues: 1,
-  },
-  {
-    id: '2',
-    title: 'Code Optimization Challenge',
-    content: 'Optimize this Python function for better performance without changing its output.',
-    author: 'Bob Smith',
-    promotions: 31,
-    comments: 12,
-    issues: 2,
-  },
-  // Add more mock prompts as needed
-]
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
 
-export default function Home() {
+export default function Signup() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Handle signup logic here
+    console.log({ name, email, password, confirmPassword })
+  }
+
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {mockPrompts.map((prompt) => (
-        <PromptCard key={prompt.id} {...prompt} />
-      ))}
+    <div className="container mx-auto flex items-center justify-center min-h-screen">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>Sign Up</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name">Name</label>
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+            </div>
+            <div>
+              <label htmlFor="email">Email</label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+              <label htmlFor="password">Password</label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div>
+              <label htmlFor="confirm-password">Confirm Password</label>
+              <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+            </div>
+            <Button type="submit" className="w-full">Sign Up</Button>
+          </form>
+        </CardContent>
+        <CardFooter>
+          <p className="text-sm text-center w-full">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-blue-600 hover:underline">
+              Log in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   )
 }

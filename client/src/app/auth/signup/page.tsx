@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Link } from 'wouter'
 import { insertUserSchema } from '@db/schema'
 import { z } from 'zod'
+import { Loader2 } from "lucide-react"
 
 const signupSchema = insertUserSchema.extend({
   confirmPassword: z.string()
@@ -154,7 +155,14 @@ export default function SignupPage() {
                 className="w-full"
                 disabled={isLoading}
               >
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
           </Form>

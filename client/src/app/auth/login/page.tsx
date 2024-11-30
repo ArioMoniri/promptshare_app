@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Link } from 'wouter'
 import { insertUserSchema } from '@db/schema'
 import { z } from 'zod'
+import { Loader2 } from "lucide-react"
 
 const loginSchema = insertUserSchema.pick({ 
   username: true,
@@ -23,6 +24,7 @@ type LoginForm = z.infer<typeof loginSchema>
 export default function LoginPage() {
   const { login } = useUser()
   const { toast } = useToast()
+  const [isLoading, setIsLoading] = useState(false)
 
   const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -34,6 +36,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginForm) => {
     try {
+      setIsLoading(true)
       const result = await login(data)
       if (!result.ok) {
         toast({
@@ -48,6 +51,8 @@ export default function LoginPage() {
         title: "Error",
         description: error.message
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -86,8 +91,15 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Sign In
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  "Sign In"
+                )}
               </Button>
             </form>
           </Form>
