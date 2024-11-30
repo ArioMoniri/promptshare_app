@@ -24,8 +24,19 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
+  const [version, setVersion] = useState("1.0.0");
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
+
+  const categories = [
+    'Writing',
+    'Coding',
+    'Image Generation',
+    'Audio Generation',
+    'Video Generation',
+    'Other'
+  ];
   const { testPrompt } = useOpenAI();
   const { createPrompt } = usePrompts();
   const { toast } = useToast();
@@ -68,6 +79,8 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
         title,
         content,
         description,
+        category,
+        version,
         tags: [],
       });
       onClose();
@@ -113,6 +126,27 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe what your prompt does..."
                 className="h-24"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Category</label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Version</label>
+              <Input
+                value={version}
+                onChange={(e) => setVersion(e.target.value)}
+                placeholder="e.g., 1.0.0"
               />
             </div>
           </div>

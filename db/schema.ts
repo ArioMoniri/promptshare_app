@@ -23,7 +23,8 @@ export const prompts = pgTable("prompts", {
   tags: text("tags").array().default([]),
   upvotes: integer("upvotes").default(0),
   downvotes: integer("downvotes").default(0),
-  version: integer("version").default(1),
+  category: text("category"),
+  version: text("version").default("1.0.0"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

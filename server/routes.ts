@@ -99,6 +99,7 @@ export function registerRoutes(app: Express) {
         .values({
           ...req.body,
           userId: req.user!.id,
+          version: req.body.version || "1.0.0",
         })
         .returning();
       res.json(prompt);
