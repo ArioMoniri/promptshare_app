@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/toaster";
 import HomePage from "./pages/HomePage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
-import UserProfile from "./components/UserProfile";
+import ProfilePage from "./pages/ProfilePage";
 import PromptEditor from "./components/PromptEditor";
 import Header from "./components/Header";
 import LoginPage from "./app/auth/login/page";
@@ -45,7 +45,7 @@ function Router() {
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={HomePage} />
-          <Route path="/profile/:id" component={UserProfile} />
+          <Route path="/profile/:username" component={ProfilePage} />
           <Route path="/create" component={PromptEditor} />
           <Route>404 Page Not Found</Route>
         </Switch>
