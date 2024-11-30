@@ -34,12 +34,20 @@ export default function ProfilePage() {
 
   const { data: user, isLoading: loadingUser, error: userError } = useQuery({
     queryKey: ['user', id],
-    queryFn: () => fetchUserProfile(id),
+    queryFn: () => {
+      if (!id) throw new Error('User ID is required');
+      return fetchUserProfile(id);
+    },
+    enabled: !!id
   });
 
   const { data: prompts, isLoading: loadingPrompts, error: promptsError } = useQuery({
     queryKey: ['userPrompts', id],
-    queryFn: () => fetchUserPrompts(id),
+    queryFn: () => {
+      if (!id) throw new Error('User ID is required');
+      return fetchUserPrompts(id);
+    },
+    enabled: !!id
   });
 
   if (loadingUser || loadingPrompts) {

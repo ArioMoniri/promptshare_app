@@ -64,16 +64,41 @@ export default function AuthPage() {
   };
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [videoAttempted, setVideoAttempted] = useState(false);
 
   useEffect(() => {
-    if (videoRef.current) {
-      console.log('Attempting to play video...');
-      videoRef.current.play().catch(e => {
-        console.error('Initial video play failed:', e);
-      });
-    }
-  }, [videoRef]);
+    const playVideo = async () => {
+      if (!videoRef.current || videoAttempted) return;
+      
+      try {
+        setVideoAttempted(true);
+        await videoRef.current.play();
+        console.log('Video playing successfully');
+      } catch (e) {
+        console.error('Video playback failed:', e);
+        // Fall back to a static background if video fails
+        if (videoRef.current) {
+          videoRef.current.style.display = 'none';
+        }
+      }
+    };
+
+    // Try to play when component mounts
+    playVideo();
+
+    // Also try to play on user interaction
+    const handleInteraction = () => {
+      playVideo();
+    };
+
+    document.addEventListener('click', handleInteraction);
+    document.addEventListener('touchstart', handleInteraction);
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+      document.removeEventListener('touchstart', handleInteraction);
+    };
+  }, [videoAttempted]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center">
@@ -81,29 +106,10 @@ export default function AuthPage() {
       <video
         ref={videoRef}
         className="absolute top-0 left-0 w-full h-full object-cover -z-10"
-        autoPlay
-        muted
         playsInline
-        onLoadedData={() => {
-          console.log('Video loaded successfully');
-          setVideoLoaded(true);
-          if (videoRef.current) {
-            videoRef.current.play().catch(e => {
-              console.error('Video play failed:', e);
-            });
-          }
-        }}
-        onError={(e) => {
-          console.error('Video error:', e);
-          const video = e.currentTarget;
-          console.error('Video error details:', {
-            error: video.error,
-            networkState: video.networkState,
-            readyState: video.readyState,
-            src: video.src
-          });
-        }}
-        style={{ opacity: videoLoaded ? 1 : 0 }}
+        muted
+        preload="auto"
+        loop={false}
       >
         <source 
           src="/assets/videos/Gen 3 Alpha Turbo Adventure.mp4" 
