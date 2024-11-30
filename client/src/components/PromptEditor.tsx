@@ -33,6 +33,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("");
   const [version, setVersion] = useState("1.0.0");
+  const [tags, setTags] = useState("");
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<TestResult[]>([]);
 
@@ -88,7 +89,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
         description,
         category,
         version,
-        tags: [],
+        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
       });
       onClose();
     } catch (error: any) {
@@ -102,13 +103,13 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Create New Prompt</DialogTitle>
         </DialogHeader>
-        <div className="grid grid-cols-2 gap-4 flex-1 overflow-hidden">
-          {/* Left side - Prompt Editor */}
-          <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4 overflow-y-auto flex-1 pr-2">
+          {/* Left side - Editor */}
+          <ScrollArea className="space-y-4 pr-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
               <Input
@@ -156,7 +157,15 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
                 placeholder="e.g., 1.0.0"
               />
             </div>
-          </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tags (comma-separated)</label>
+              <Input
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="e.g., creative, coding, tutorial"
+              />
+            </div>
+          </ScrollArea>
 
           {/* Right side - Testing Interface */}
           <div className="flex flex-col h-full border rounded-lg overflow-hidden">
