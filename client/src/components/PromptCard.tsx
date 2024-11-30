@@ -56,7 +56,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [testing, setTesting] = useState(false);
   const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
   const [hasVoted, setHasVoted] = useState<number>(0);
-  const [optimisticLikes, setOptimisticLikes] = useState<number>(prompt.likes ?? 0);
+  const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
+  const [optimisticDownvotes, setOptimisticDownvotes] = useState<number>(prompt.downvotes ?? 0);
 
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
@@ -143,12 +144,11 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
       // Optimistically update UI
       setHasVoted(newVoteValue);
-      setOptimisticLikes(prev => {
-        if (newVoteValue === 0) {
-          return prev - previousVote;
-        }
-        return prev - previousVote + newVoteValue;
-      });
+      if (value === 1) {
+        setOptimisticUpvotes(prev => prev + (newVoteValue === 1 ? 1 : -1));
+      } else {
+        setOptimisticDownvotes(prev => prev + (newVoteValue === -1 ? 1 : -1));
+      }
 
       const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
         method: 'POST',

@@ -17,7 +17,8 @@ export function registerRoutes(app: Express) {
           content: prompts.content,
           description: prompts.description,
           tags: prompts.tags,
-          likes: prompts.likes,
+          upvotes: prompts.upvotes,
+          downvotes: prompts.downvotes,
           version: prompts.version,
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
@@ -30,11 +31,18 @@ export function registerRoutes(app: Express) {
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id));
-      res.setHeader('Content-Type', 'application/json');
+      
+      if (!allPrompts) {
+        return res.status(404).json({ error: "No prompts found" });
+      }
+      
       res.json(allPrompts);
-    } catch (error) {
-      res.setHeader('Content-Type', 'application/json');
-      res.status(500).json({ error: "Failed to fetch prompts" });
+    } catch (error: any) {
+      console.error('Error fetching prompts:', error);
+      res.status(500).json({ 
+        error: "Failed to fetch prompts",
+        details: error.message 
+      });
     }
   });
 
