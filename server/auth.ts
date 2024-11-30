@@ -71,13 +71,6 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Debug logging middleware
-  app.use((req, res, next) => {
-    console.log('Session:', req.session);
-    console.log('User:', req.user);
-    next();
-  });
-
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -162,7 +155,8 @@ export function setupAuth(app: Express) {
         if (err) {
           return next(err);
         }
-        return res.json({ ok: true });
+        const { password: _, ...userData } = newUser;
+        return res.json({ ok: true, user: userData });
       });
     } catch (error) {
       next(error);
@@ -170,6 +164,8 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", async (req, res) => {
+    console.log('Login request received:', req.body.username);
+    
     if (!req.body.username || !req.body.password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
@@ -182,22 +178,39 @@ export function setupAuth(app: Express) {
         .limit(1);
 
       if (!user || !(await crypto.compare(req.body.password, user.password))) {
+        console.log('Invalid credentials for user:', req.body.username);
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
       // Set session data
       req.session.userId = user.id;
       req.session.username = user.username;
+      
+      // Save session explicitly
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
+        });
+      });
 
       // Login using passport
       await new Promise<void>((resolve, reject) => {
         req.login(user, (err) => {
-          if (err) reject(err);
-          else resolve();
+          if (err) {
+            console.error('Passport login error:', err);
+            reject(err);
+          } else {
+            resolve();
+          }
         });
       });
 
-      // Return user data without password
+      console.log('Login successful for user:', user.username);
       const { password: _, ...userData } = user;
       res.json({ ok: true, user: userData });
     } catch (error) {
@@ -220,26 +233,5 @@ export function setupAuth(app: Express) {
       return res.json(req.user);
     }
     res.status(401).send("Not logged in");
-  });
-
-  app.post("/api/user/apikey", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).send("Not authenticated");
-    }
-
-    const { apiKey } = req.body;
-    if (!apiKey) {
-      return res.status(400).send("API key is required");
-    }
-
-    try {
-      await db
-        .update(users)
-        .set({ apiKey })
-        .where(eq(users.id, req.user!.id));
-      res.json({ ok: true });
-    } catch (error) {
-      res.status(500).send("Failed to update API key");
-    }
   });
 }

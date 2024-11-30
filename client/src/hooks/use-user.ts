@@ -9,7 +9,7 @@ type LoginCredentials = {
 
 type RequestResult = {
   ok: true;
-  user?: User;
+  user: User;
 } | {
   ok: false;
   message: string;
@@ -41,25 +41,40 @@ export function useUser() {
 
   const loginMutation = useMutation<RequestResult, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to login');
+      try {
+        console.log('Login attempt for:', credentials.username);
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
+          credentials: 'include'
+        });
+        
+        const data = await response.json();
+        console.log('Login response:', response.status, data);
+        
+        if (!response.ok) {
+          return { ok: false, message: data.message || 'Failed to login' };
+        }
+        
+        return { ok: true, user: data.user };
+      } catch (error: any) {
+        console.error('Login error:', error);
+        return { ok: false, message: error.message || 'Failed to login' };
       }
-      
-      return { ok: true, user: data.user };
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(['user'], data.user);
-      // Force page reload to ensure proper state refresh
-      window.location.href = '/';
+      if (data.ok) {
+        queryClient.setQueryData(['user'], data.user);
+        window.location.href = '/';
+      }
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Login Failed",
+        description: error.message
+      });
     }
   });
 
@@ -74,7 +89,7 @@ export function useUser() {
         throw new Error(await response.text());
       }
 
-      return { ok: true };
+      return { ok: true, user: null as any };
     },
     onSuccess: () => {
       queryClient.setQueryData(['user'], null);
@@ -90,14 +105,18 @@ export function useUser() {
         credentials: 'include'
       });
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        throw new Error(await response.text());
+        return { ok: false, message: await response.text() };
       }
 
-      return { ok: true };
+      return { ok: true, user: data.user };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+    onSuccess: (data) => {
+      if (data.ok) {
+        queryClient.setQueryData(['user'], data.user);
+      }
     },
   });
 

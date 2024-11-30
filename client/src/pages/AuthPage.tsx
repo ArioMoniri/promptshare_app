@@ -17,12 +17,16 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   const form = useForm({
-    resolver: zodResolver(insertUserSchema.extend({
-      confirmPassword: z.string()
-    }).refine((data) => data.password === data.confirmPassword, {
-      message: "Passwords don't match",
-      path: ["confirmPassword"],
-    })),
+    resolver: zodResolver(
+      isLogin
+        ? insertUserSchema.pick({ username: true, password: true })
+        : insertUserSchema.extend({
+            confirmPassword: z.string()
+          }).refine((data) => data.password === data.confirmPassword, {
+            message: "Passwords don't match",
+            path: ["confirmPassword"],
+          })
+    ),
     defaultValues: {
       username: "",
       password: "",
@@ -35,13 +39,13 @@ export default function AuthPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      const result = isLogin 
-        ? await login({ 
-            username: data.username, 
-            password: data.password 
-          })
-        : await register(data);
+      console.log('Form submitted:', data);
+      const result = await (isLogin 
+        ? login({ username: data.username, password: data.password })
+        : register(data));
 
+      console.log('Auth result:', result);
+      
       if (!result.ok) {
         toast({
           variant: "destructive",
@@ -50,6 +54,7 @@ export default function AuthPage() {
         });
       }
     } catch (error: any) {
+      console.error('Form submission error:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -169,7 +174,10 @@ export default function AuthPage() {
           <div className="mt-4 text-center">
             <Button
               variant="link"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                form.reset();
+              }}
               className="text-sm"
             >
               {isLogin
