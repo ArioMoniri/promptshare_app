@@ -66,40 +66,51 @@ export default function AuthPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoLoaded, setVideoLoaded] = useState(false);
 
-  const handleVideoError = (e: any) => {
-    console.error('Video loading error:', e);
-    const video = e.target as HTMLVideoElement;
-    console.error('Video error details:', {
-      error: video.error,
-      networkState: video.networkState,
-      readyState: video.readyState
-    });
-    if (videoRef.current) {
-      videoRef.current.style.display = 'none';
-    }
-  };
-
   useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.play();
+      console.log('Attempting to play video...');
+      videoRef.current.play().catch(e => {
+        console.error('Initial video play failed:', e);
+      });
     }
-  }, []);
+  }, [videoRef]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center">
       {/* Video Background */}
       <video
         ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10 transition-opacity duration-500"
+        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
         autoPlay
         muted
-        loop={false}
         playsInline
-        onError={handleVideoError}
-        onLoadedData={() => setVideoLoaded(true)}
+        onLoadedData={() => {
+          console.log('Video loaded successfully');
+          setVideoLoaded(true);
+          if (videoRef.current) {
+            videoRef.current.play().catch(e => {
+              console.error('Video play failed:', e);
+            });
+          }
+        }}
+        onError={(e) => {
+          console.error('Video error:', e);
+          const video = e.currentTarget;
+          console.error('Video error details:', {
+            error: video.error,
+            networkState: video.networkState,
+            readyState: video.readyState,
+            src: video.src
+          });
+        }}
         style={{ opacity: videoLoaded ? 1 : 0 }}
       >
-        <source src="/assets/videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
+        <source 
+          src="/assets/videos/Gen 3 Alpha Turbo Adventure.mp4" 
+          type="video/mp4"
+          onError={(e) => console.error('Source error:', e)} 
+        />
+        Your browser does not support the video tag.
       </video>
 
       {/* Overlay to ensure content is readable */}

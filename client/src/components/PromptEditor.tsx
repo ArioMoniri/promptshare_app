@@ -83,13 +83,14 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
     }
 
     try {
+      const tagArray: string[] = tags.split(',').map(t => t.trim()).filter(Boolean);
       await createPrompt({
         title,
         content,
         description,
         category,
         version,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        tags: tagArray,
       });
       onClose();
     } catch (error: any) {
