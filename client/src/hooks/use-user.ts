@@ -42,6 +42,7 @@ export function useUser() {
   const loginMutation = useMutation<RequestResult, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
       try {
+        console.log('Attempting login for:', credentials.username);
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -50,12 +51,15 @@ export function useUser() {
         });
         
         const data = await response.json();
+        console.log('Login response status:', response.status);
+        
         if (!response.ok) {
           throw new Error(data.message || 'Failed to login');
         }
         
         return { ok: true, user: data.user };
       } catch (error: any) {
+        console.error('Login error:', error);
         throw new Error(error.message || 'Failed to login');
       }
     },
@@ -63,11 +67,13 @@ export function useUser() {
       if (data.user) {
         queryClient.setQueryData(['user'], data.user);
       }
+      // Redirect to home page on successful login
+      window.location.href = '/';
     },
     onError: (error) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Login Failed",
         description: error.message
       });
     }

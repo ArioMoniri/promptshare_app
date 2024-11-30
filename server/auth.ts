@@ -46,16 +46,17 @@ export function setupAuth(app: Express) {
   const MemoryStore = createMemoryStore(session);
   const sessionSettings: session.SessionOptions = {
     secret: process.env.REPL_ID || "your-secret-key",
-    resave: false,
+    resave: true,
     saveUninitialized: false,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 1 week
       httpOnly: true,
-      sameSite: 'lax'
+      sameSite: 'lax',
+      path: '/'
     },
     store: new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-    }),
+      checkPeriod: 86400000 // prune expired entries every 24h
+    })
   };
 
   if (app.get("env") === "production") {
@@ -169,7 +170,11 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    console.log('Login attempt:', req.body.username);
+    if (!req.body.username || !req.body.password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
+
+    console.log('Login attempt for username:', req.body.username);
     
     passport.authenticate('local', (err: any, user: any, info: IVerifyOptions | undefined) => {
       if (err) {
@@ -188,12 +193,21 @@ export function setupAuth(app: Express) {
           return res.status(500).json({ message: 'Failed to establish session' });
         }
         
-        console.log('Login successful:', user.username);
+        // Set session data
         req.session.userId = user.id;
         req.session.username = user.username;
         
-        const { password: _, ...userData } = user;
-        return res.json({ ok: true, user: userData });
+        // Save session explicitly
+        req.session.save((err) => {
+          if (err) {
+            console.error('Session save error:', err);
+            return res.status(500).json({ message: 'Failed to save session' });
+          }
+          
+          console.log('Login successful for user:', user.username);
+          const { password: _, ...userData } = user;
+          return res.json({ ok: true, user: userData });
+        });
       });
     })(req, res, next);
   });
