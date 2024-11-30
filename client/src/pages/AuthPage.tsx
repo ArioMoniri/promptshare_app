@@ -3,12 +3,13 @@ import { useUser } from "../hooks/use-user";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { insertUserSchema } from "@db/schema";
 import { z } from "zod";
+import { Code2 } from "lucide-react";
 
 export default function AuthPage() {
   const { login, register } = useUser();
@@ -63,10 +64,15 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-screen">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>{isLogin ? "Login" : "Sign Up"}</CardTitle>
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center mb-4">
+            <Code2 className="h-12 w-12 text-primary" />
+          </div>
+          <CardTitle className="text-2xl text-center">
+            {isLogin ? "Welcome back" : "Create an account"}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -76,45 +82,110 @@ export default function AuthPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="username">Username</FormLabel>
+                    <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input id="username" {...field} required />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              {!isLogin && (
+                <>
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="surname"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Surname</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="password">Password</FormLabel>
+                    <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input id="password" type="password" {...field} required />
+                      <Input type="password" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {!isLogin && (
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
               <Button type="submit" className="w-full">
-                {isLogin ? "Login" : "Sign Up"}
+                {isLogin ? "Sign In" : "Sign Up"}
               </Button>
             </form>
           </Form>
+
+          <div className="mt-4 text-center">
+            <Button
+              variant="link"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                form.reset();
+              }}
+              className="text-sm"
+            >
+              {isLogin
+                ? "Don't have an account? Sign up"
+                : "Already have an account? Sign in"}
+            </Button>
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-between">
-          <Button
-            variant="link"
-            onClick={() => {
-              setIsLogin(!isLogin);
-              form.reset();
-            }}
-            className="text-sm text-blue-600 hover:underline"
-          >
-            {isLogin ? "Sign up" : "Already have an account? Sign in"}
-          </Button>
-        </CardFooter>
       </Card>
     </div>
   );
