@@ -328,4 +328,29 @@ export function registerRoutes(app: Express) {
       res.status(500).json({ error: "Failed to fetch user profile" });
     }
   });
+
+  app.get("/api/prompts/:id/vote-state", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Not authenticated");
+    }
+
+    const promptId = parseInt(req.params.id);
+    if (isNaN(promptId)) {
+      return res.status(400).send("Invalid prompt ID");
+    }
+
+    try {
+      const [vote] = await db
+        .select({ value: votes.value })
+        .from(votes)
+        .where(
+          sql`${votes.promptId} = ${promptId} AND ${votes.userId} = ${req.user!.id}`
+        )
+        .limit(1);
+
+      res.json({ value: vote?.value || 0 });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch vote state" });
+    }
+  });
 }

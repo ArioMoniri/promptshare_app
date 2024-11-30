@@ -62,6 +62,26 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const { toast } = useToast();
 
   useEffect(() => {
+    const fetchVoteState = async () => {
+      try {
+        const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const { value } = await response.json();
+          setHasVoted(value);
+        }
+      } catch (error) {
+        console.error('Failed to fetch vote state:', error);
+      }
+    };
+    
+    if (prompt.id) {
+      fetchVoteState();
+    }
+  }, [prompt.id]);
+
+  useEffect(() => {
     if (prompt.id) {
       fetchComments();
       const interval = setInterval(async () => {
