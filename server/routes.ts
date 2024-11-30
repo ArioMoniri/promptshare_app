@@ -46,6 +46,48 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  app.get("/api/prompts/:id", async (req, res) => {
+    try {
+      const promptId = parseInt(req.params.id);
+      if (isNaN(promptId)) {
+        return res.status(400).send("Invalid prompt ID");
+      }
+
+      const [prompt] = await db
+        .select({
+          id: prompts.id,
+          title: prompts.title,
+          content: prompts.content,
+          description: prompts.description,
+          tags: prompts.tags,
+          upvotes: prompts.upvotes,
+          downvotes: prompts.downvotes,
+          version: prompts.version,
+          createdAt: prompts.createdAt,
+          updatedAt: prompts.updatedAt,
+          userId: prompts.userId,
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
+        })
+        .from(prompts)
+        .leftJoin(users, eq(prompts.userId, users.id))
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!prompt) {
+        return res.status(404).json({ error: "Prompt not found" });
+      }
+
+      res.json(prompt);
+    } catch (error) {
+      console.error('Error fetching prompt:', error);
+      res.status(500).json({ error: "Failed to fetch prompt" });
+    }
+  });
+
   app.post("/api/prompts", async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).send("Not authenticated");
