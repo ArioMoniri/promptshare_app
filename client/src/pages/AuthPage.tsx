@@ -35,12 +35,12 @@ export default function AuthPage() {
           title: "Error",
           description: result.message,
         });
-      } else if (!isLogin) {
-        // After successful registration
+      } else {
+        // Always fetch current user after login/register
         const userResponse = await fetch('/api/user');
         const userData = await userResponse.json();
-        // Redirect to the user's own profile
-        window.location.href = `/profile/${userData.id}`;
+        // Navigate to home page first
+        window.location.href = '/';
       }
     } catch (error: any) {
       toast({

@@ -150,40 +150,54 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const handleVote = async (value: 1 | -1) => {
     try {
       const newVoteValue = hasVoted === value ? 0 : value;
-      const previousVote = hasVoted;
-      const previousUpvotes = optimisticUpvotes;
-      const previousDownvotes = optimisticDownvotes;
-
+      
       // Optimistically update UI
       setHasVoted(newVoteValue);
-      if (value === 1) {
-        if (previousVote === -1) setOptimisticDownvotes(prev => prev - 1);
-        setOptimisticUpvotes(prev => newVoteValue === 1 ? prev + 1 : prev - 1);
-      } else {
-        if (previousVote === 1) setOptimisticUpvotes(prev => prev - 1);
-        setOptimisticDownvotes(prev => newVoteValue === -1 ? prev + 1 : prev - 1);
-      }
+      
+      // Calculate new vote counts
+      const newUpvotes = optimisticUpvotes + (
+        value === 1 
+          ? (newVoteValue === 1 ? 1 : -1) 
+          : (hasVoted === 1 ? -1 : 0)
+      );
+      
+      const newDownvotes = optimisticDownvotes + (
+        value === -1 
+          ? (newVoteValue === -1 ? 1 : -1)
+          : (hasVoted === -1 ? -1 : 0)
+      );
+      
+      setOptimisticUpvotes(newUpvotes);
+      setOptimisticDownvotes(newDownvotes);
 
       const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ value: newVoteValue }),
         credentials: 'include',
       });
 
       if (!response.ok) {
-        // Revert optimistic updates on error
-        setHasVoted(previousVote);
-        setOptimisticUpvotes(previousUpvotes);
-        setOptimisticDownvotes(previousDownvotes);
         throw new Error(await response.text());
       }
 
-      // Update counts from server response
-      const { upvotes, downvotes } = await response.json();
-      setOptimisticUpvotes(upvotes);
-      setOptimisticDownvotes(downvotes);
+      // Get latest counts from server
+      const promptResponse = await fetch(`/api/prompts/${prompt.id}`);
+      if (!promptResponse.ok) {
+        throw new Error('Failed to fetch updated prompt');
+      }
+      
+      const updatedPrompt = await promptResponse.json();
+      setOptimisticUpvotes(updatedPrompt.upvotes);
+      setOptimisticDownvotes(updatedPrompt.downvotes);
     } catch (error: any) {
+      // Revert optimistic updates on error
+      const response = await fetch(`/api/prompts/${prompt.id}`);
+      const currentPrompt = await response.json();
+      setHasVoted(0);  // Reset vote state
+      setOptimisticUpvotes(currentPrompt.upvotes);
+      setOptimisticDownvotes(currentPrompt.downvotes);
+      
       toast({
         variant: "destructive",
         title: "Error",
