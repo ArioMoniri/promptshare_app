@@ -65,6 +65,13 @@ export default function AuthPage() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const handleVideoError = () => {
+    console.error('Failed to load video background');
+    if (videoRef.current) {
+      videoRef.current.style.display = 'none';
+    }
+  };
+
   useEffect(() => {
     if (videoRef.current) {
       videoRef.current.play();
@@ -81,8 +88,9 @@ export default function AuthPage() {
         muted
         loop={false}
         playsInline
+        onError={handleVideoError}
       >
-        <source src="/videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
+        <source src="videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
       </video>
 
       {/* Overlay to ensure content is readable */}
