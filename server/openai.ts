@@ -9,16 +9,54 @@ export async function testPrompt(input: string, apiKey: string) {
   const openai = new OpenAI({ apiKey });
   
   try {
-    const completion = await openai.chat.completions.create({
-      messages: [{ role: "user", content: input }],
+    const response = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful AI assistant. Format your response as a JSON object."
+        },
+        {
+          role: "user",
+          content: input
+        }
+      ],
       model: "gpt-4o",
       response_format: { type: "json_object" }
     });
 
     return {
-      output: completion.choices[0]?.message?.content || 'No response',
+      output: response.choices[0]?.message?.content || 'No response',
     };
   } catch (error: any) {
-    throw new Error(error.message);
+    throw new Error(`OpenAI API error: ${error.message}`);
+  }
+}
+
+export async function analyzePrompt(prompt: string, apiKey: string) {
+  if (!apiKey) {
+    throw new Error('OpenAI API key is required');
+  }
+
+  const openai = new OpenAI({ apiKey });
+
+  try {
+    const response = await openai.chat.completions.create({
+      messages: [
+        {
+          role: "system",
+          content: "Analyze the given prompt and provide feedback on its effectiveness, clarity, and potential improvements. Format your response as a JSON object with the following structure: { 'effectiveness': number, 'clarity': number, 'suggestions': string[], 'tags': string[] }"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      model: "gpt-4o",
+      response_format: { type: "json_object" }
+    });
+
+    return JSON.parse(response.choices[0]?.message?.content || '{}');
+  } catch (error: any) {
+    throw new Error(`OpenAI API error: ${error.message}`);
   }
 }
