@@ -12,6 +12,7 @@ type PromptWithUser = Prompt & {
 interface UsePromptsOptions {
   sort?: 'recent' | 'popular' | 'controversial';
   search?: string;
+  category?: string;
 }
 
 async function fetchPrompts(options: UsePromptsOptions = {}): Promise<PromptWithUser[]> {
