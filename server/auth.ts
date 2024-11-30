@@ -169,22 +169,29 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
+    console.log('Login attempt:', req.body.username);
+    
     passport.authenticate('local', (err: any, user: any, info: IVerifyOptions | undefined) => {
       if (err) {
         console.error('Login error:', err);
         return res.status(500).json({ message: 'Internal server error' });
       }
+      
       if (!user) {
+        console.log('Login failed:', info?.message);
         return res.status(401).json({ message: info?.message || 'Invalid credentials' });
       }
       
       req.logIn(user, (err) => {
         if (err) {
-          console.error('Login error:', err);
+          console.error('Session error:', err);
           return res.status(500).json({ message: 'Failed to establish session' });
         }
         
-        // Return user data without sensitive information
+        console.log('Login successful:', user.username);
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        
         const { password: _, ...userData } = user;
         return res.json({ ok: true, user: userData });
       });

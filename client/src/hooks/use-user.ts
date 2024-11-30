@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { User, InsertUser } from "@db/schema";
+import { useToast } from "@/hooks/use-toast";
 
 type LoginCredentials = {
   username: string;
@@ -8,6 +9,7 @@ type LoginCredentials = {
 
 type RequestResult = {
   ok: true;
+  user?: User;
 } | {
   ok: false;
   message: string;
@@ -15,6 +17,7 @@ type RequestResult = {
 
 export function useUser() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: user, error, isLoading } = useQuery<User | null, Error>({
     queryKey: ['user'],
@@ -38,24 +41,36 @@ export function useUser() {
 
   const loginMutation = useMutation<RequestResult, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(credentials),
+          credentials: 'include'
+        });
+        
         const data = await response.json();
-        throw new Error(data.message || 'Failed to login');
+        if (!response.ok) {
+          throw new Error(data.message || 'Failed to login');
+        }
+        
+        return { ok: true, user: data.user };
+      } catch (error: any) {
+        throw new Error(error.message || 'Failed to login');
       }
-      
-      const data = await response.json();
-      return { ok: true };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+    onSuccess: (data) => {
+      if (data.user) {
+        queryClient.setQueryData(['user'], data.user);
+      }
     },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
   });
 
   const logoutMutation = useMutation<RequestResult, Error>({
@@ -72,7 +87,7 @@ export function useUser() {
       return { ok: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      queryClient.setQueryData(['user'], null);
     },
   });
 
