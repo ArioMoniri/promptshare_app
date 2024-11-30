@@ -20,7 +20,7 @@ export const prompts = pgTable("prompts", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   description: text("description"),
-  tags: text("tags").array(),
+  tags: text("tags").array().default([]),
   upvotes: integer("upvotes").default(0),
   downvotes: integer("downvotes").default(0),
   version: integer("version").default(1),

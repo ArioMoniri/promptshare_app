@@ -185,9 +185,14 @@ export function registerRoutes(app: Express) {
             downvotes
           })
           .where(eq(prompts.id, promptId));
-      });
 
-      res.json({ ok: true });
+        // Return updated counts
+        res.json({ 
+          ok: true,
+          upvotes: upvotes,
+          downvotes: downvotes
+        });
+      });
     } catch (error: any) {
       console.error('Vote error:', error);
       res.status(500).json({ 

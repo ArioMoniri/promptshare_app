@@ -62,44 +62,22 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchVoteState = async () => {
-      try {
-        const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const { value } = await response.json();
-          setHasVoted(value);
-        }
-      } catch (error) {
-        console.error('Failed to fetch vote state:', error);
-      }
-    };
-    
-    if (prompt.id) {
-      fetchVoteState();
-    }
-  }, [prompt.id]);
-
-  useEffect(() => {
     if (prompt.id) {
       fetchComments();
-      const interval = setInterval(async () => {
+      const fetchVoteState = async () => {
         try {
-          const response = await fetch(`/api/prompts/${prompt.id}`);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch prompt: ${response.statusText}`);
+          const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
+            credentials: 'include'
+          });
+          if (response.ok) {
+            const { value } = await response.json();
+            setHasVoted(value);
           }
-          const data = await response.json();
-          setOptimisticUpvotes(data.upvotes ?? 0);
-          setOptimisticDownvotes(data.downvotes ?? 0);
         } catch (error) {
-          console.error('Failed to sync votes:', error);
-          // Don't show toast for sync errors to avoid spam
+          console.error('Failed to fetch vote state:', error);
         }
-      }, 5000);
-
-      return () => clearInterval(interval);
+      };
+      fetchVoteState();
     }
   }, [prompt.id]);
 
@@ -200,6 +178,11 @@ export default function PromptCard({ prompt }: PromptCardProps) {
         setOptimisticDownvotes(previousDownvotes);
         throw new Error(await response.text());
       }
+
+      // Update counts from server response
+      const { upvotes, downvotes } = await response.json();
+      setOptimisticUpvotes(upvotes);
+      setOptimisticDownvotes(downvotes);
     } catch (error: any) {
       toast({
         variant: "destructive",

@@ -68,7 +68,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
         title,
         content,
         description,
-        tags: [] as string[],
+        tags: [],
       });
       onClose();
     } catch (error: any) {
