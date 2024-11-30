@@ -64,9 +64,16 @@ export default function AuthPage() {
   };
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoLoaded, setVideoLoaded] = useState(false);
 
-  const handleVideoError = () => {
-    console.error('Failed to load video background');
+  const handleVideoError = (e: any) => {
+    console.error('Video loading error:', e);
+    const video = e.target as HTMLVideoElement;
+    console.error('Video error details:', {
+      error: video.error,
+      networkState: video.networkState,
+      readyState: video.readyState
+    });
     if (videoRef.current) {
       videoRef.current.style.display = 'none';
     }
@@ -83,14 +90,16 @@ export default function AuthPage() {
       {/* Video Background */}
       <video
         ref={videoRef}
-        className="absolute top-0 left-0 w-full h-full object-cover -z-10"
+        className="absolute top-0 left-0 w-full h-full object-cover -z-10 transition-opacity duration-500"
         autoPlay
         muted
         loop={false}
         playsInline
         onError={handleVideoError}
+        onLoadedData={() => setVideoLoaded(true)}
+        style={{ opacity: videoLoaded ? 1 : 0 }}
       >
-        <source src="videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
+        <source src="/assets/videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
       </video>
 
       {/* Overlay to ensure content is readable */}
