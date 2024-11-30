@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
   Send,
   Loader2,
 } from "lucide-react";
+import { cn } from '@/lib/utils';
 import type { Prompt } from "@db/schema";
 
 interface PromptComment {
@@ -44,9 +45,10 @@ interface PromptWithComments extends Prompt {
 
 interface PromptCardProps {
   prompt: PromptWithComments;
+  compact?: boolean;
 }
 
-export default function PromptCard({ prompt }: PromptCardProps) {
+export default function PromptCard({ prompt, compact = false }: PromptCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [showTest, setShowTest] = useState(false);
   const [comment, setComment] = useState("");
@@ -57,6 +59,7 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   const [hasVoted, setHasVoted] = useState<number>(0);
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
   const [optimisticDownvotes, setOptimisticDownvotes] = useState<number>(prompt.downvotes ?? 0);
+  const [copied, setCopied] = useState(false);
 
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
@@ -208,6 +211,8 @@ export default function PromptCard({ prompt }: PromptCardProps) {
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(prompt.content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
     toast({
       title: "Copied",
       description: "Prompt copied to clipboard",
@@ -223,74 +228,84 @@ export default function PromptCard({ prompt }: PromptCardProps) {
   };
 
   return (
-    <Card className="hover:shadow-lg transition-shadow">
-      <CardHeader className="flex flex-row items-center gap-4">
-        {prompt.user?.id ? (
-          <Link href={`/profile/${prompt.user.id}`} onClick={(e) => e.stopPropagation()}>
-            <Avatar className="cursor-pointer">
-              <AvatarImage src={prompt.user.avatar || undefined} alt={prompt.user.username || ""} />
-              <AvatarFallback>
-                {prompt.user.username?.charAt(0).toUpperCase()}
-              </AvatarFallback>
+    <Card className={cn("w-full hover:shadow-lg transition-shadow", compact && "p-4")}>
+      <CardHeader className={cn(compact && "p-0 pb-4")}>
+        <div className="flex items-center space-x-4">
+          {prompt.user?.id ? (
+            <Link href={`/profile/${prompt.user.id}`} onClick={(e) => e.stopPropagation()}>
+              <Avatar>
+                <AvatarImage src={prompt.user.avatar || undefined} alt={prompt.user.username || ""} />
+                <AvatarFallback>
+                  {prompt.user.username?.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <Avatar>
+              <AvatarFallback>?</AvatarFallback>
             </Avatar>
-          </Link>
-        ) : (
-          <Avatar>
-            <AvatarFallback>?</AvatarFallback>
-          </Avatar>
-        )}
-        <div className="flex-1">
-          <h3 className="font-semibold">{prompt.title}</h3>
-          <p className="text-sm text-muted-foreground">
-            by {prompt.user?.id ? (
-              <Link href={`/profile/${prompt.user.id}`} className="hover:underline cursor-pointer">
-                {prompt.user.username}
-              </Link>
-            ) : "Unknown User"} •{" "}
-            {formatDistanceToNow(new Date(prompt.createdAt), { addSuffix: true })}
-          </p>
+          )}
+          <div className="flex-grow">
+            <CardTitle className={cn("text-lg", compact && "text-base")}>{prompt.title}</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              by {prompt.user?.username || 'Anonymous'}
+            </p>
+          </div>
+          <Button variant="ghost" size="icon" onClick={handleCopy}>
+            {copied ? (
+              <span className="text-green-500">Copied!</span>
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
+          </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <pre className="p-4 bg-muted rounded-md overflow-x-auto">
-          <code>{prompt.content}</code>
-        </pre>
+      <CardContent className={cn(compact && "p-0")}>
+        <p className={cn("text-foreground mb-4", compact && "text-sm")}>
+          {prompt.content.substring(0, compact ? 50 : 100)}...
+        </p>
         {prompt.description && (
           <p className="mt-4 text-sm text-muted-foreground">
             {prompt.description}
           </p>
         )}
+        <div className="flex flex-wrap gap-2 mb-2">
+          {prompt.category && (
+            <span className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs">
+              {prompt.category}
+            </span>
+          )}
+          {prompt.tags?.map((tag) => (
+            <span key={tag} className="bg-secondary/10 text-secondary px-2 py-1 rounded-full text-xs">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground">Version: {prompt.version}</p>
       </CardContent>
-      <CardFooter>
-        <div className="flex justify-between items-center w-full">
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => handleVote(1)}
-            >
-              <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
-              {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => handleVote(-1)}
-            >
-              <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
-              {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={handleCopy}
-            >
-              <Copy className="h-4 w-4" />
-              Copy
-            </Button>
+      <CardFooter className={cn("flex justify-between flex-wrap gap-2", compact && "p-0 pt-4")}>
+        <div className="flex space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleVote(1)}
+          >
+            <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
+            {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => handleVote(-1)}
+          >
+            <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
+            {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
+          </Button>
+        </div>
+        {!compact && (
+          <>
             <Button 
               variant="ghost" 
               size="sm" 
@@ -309,17 +324,17 @@ export default function PromptCard({ prompt }: PromptCardProps) {
               <Bot className="h-4 w-4" />
               Test
             </Button>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleShare}
-          >
-            <Share2 className="h-4 w-4" />
-            Share
-          </Button>
-        </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={handleShare}
+            >
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+          </>
+        )}
       </CardFooter>
 
       {/* Comments Dialog */}
