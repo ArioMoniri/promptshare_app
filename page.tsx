@@ -3,56 +3,55 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import Link from 'next/link'
 
-export default function Signup() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
+export default function CreatePrompt() {
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic here
-    console.log({ name, email, password, confirmPassword })
+    // Handle form submission here (e.g., send data to API)
+    console.log({ title, content })
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-md">
+    <div className="max-w-2xl mx-auto">
+      <Card>
         <CardHeader>
-          <CardTitle>Sign Up</CardTitle>
+          <CardTitle>Create a New Prompt</CardTitle>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit}>
+          <CardContent className="space-y-4">
             <div>
-              <label htmlFor="name">Name</label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
+                Title
+              </label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
             </div>
             <div>
-              <label htmlFor="email">Email</label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <label htmlFor="content" className="block text-sm font-medium text-gray-700">
+                Prompt Content
+              </label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                required
+                className="min-h-[200px]"
+              />
             </div>
-            <div>
-              <label htmlFor="password">Password</label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-            </div>
-            <div>
-              <label htmlFor="confirm-password">Confirm Password</label>
-              <Input id="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-            </div>
-            <Button type="submit" className="w-full">Sign Up</Button>
-          </form>
-        </CardContent>
-        <CardFooter>
-          <p className="text-sm text-center w-full">
-            Already have an account?{' '}
-            <Link href="/auth/login" className="text-blue-600 hover:underline">
-              Log in
-            </Link>
-          </p>
-        </CardFooter>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" className="w-full">Create Prompt</Button>
+          </CardFooter>
+        </form>
       </Card>
     </div>
   )

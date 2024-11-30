@@ -9,7 +9,7 @@ import HomePage from "./pages/HomePage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
 import UserProfile from "./components/UserProfile";
-import Navigation from "./components/Navigation";
+import Header from "./components/Header";
 import LoginPage from "./app/auth/login/page";
 import SignupPage from "./app/auth/signup/page";
 import ResetPasswordPage from "./app/auth/reset-password/page";
@@ -40,7 +40,7 @@ function Router() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation user={user} />
+      <Header />
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={HomePage} />
