@@ -8,6 +8,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { insertUserSchema } from "@db/schema";
+import { z } from "zod";
 import { Code2 } from "lucide-react";
 
 export default function AuthPage() {
@@ -16,10 +17,16 @@ export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
 
   const form = useForm({
-    resolver: zodResolver(insertUserSchema),
+    resolver: zodResolver(insertUserSchema.extend({
+      confirmPassword: z.string()
+    }).refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ["confirmPassword"],
+    })),
     defaultValues: {
       username: "",
       password: "",
+      confirmPassword: "",
       email: "",
       name: "",
       surname: "",
@@ -133,6 +140,22 @@ export default function AuthPage() {
                   </FormItem>
                 )}
               />
+
+              {!isLogin && (
+                <FormField
+                  control={form.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <Button type="submit" className="w-full">
                 {isLogin ? "Sign In" : "Sign Up"}
