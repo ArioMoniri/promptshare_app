@@ -70,6 +70,13 @@ export function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Debug logging middleware
+  app.use((req, res, next) => {
+    console.log('Session:', req.session);
+    console.log('User:', req.user);
+    next();
+  });
+
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
@@ -164,15 +171,19 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     passport.authenticate('local', (err: any, user: any, info: IVerifyOptions | undefined) => {
       if (err) {
-        return next(err);
+        console.error('Login error:', err);
+        return res.status(500).json({ message: 'Internal server error' });
       }
       if (!user) {
         return res.status(401).json({ message: info?.message || 'Invalid credentials' });
       }
+      
       req.logIn(user, (err) => {
         if (err) {
-          return next(err);
+          console.error('Login error:', err);
+          return res.status(500).json({ message: 'Failed to establish session' });
         }
+        
         // Return user data without sensitive information
         const { password: _, ...userData } = user;
         return res.json({ ok: true, user: userData });

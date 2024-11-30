@@ -38,23 +38,20 @@ export function useUser() {
 
   const loginMutation = useMutation<RequestResult, Error, LoginCredentials>({
     mutationFn: async (credentials) => {
-      try {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(credentials),
-          credentials: 'include'
-        });
-        
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
         const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.message || 'Failed to login');
-        }
-        
-        return { ok: true };
-      } catch (error: any) {
-        return { ok: false, message: error.message };
+        throw new Error(data.message || 'Failed to login');
       }
+      
+      const data = await response.json();
+      return { ok: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
