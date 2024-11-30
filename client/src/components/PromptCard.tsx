@@ -67,11 +67,7 @@ interface PromptCardProps {
 
 export default function PromptCard({ prompt, compact = false }: PromptCardProps) {
   const [showComments, setShowComments] = useState(false);
-  const [showTest, setShowTest] = useState(false);
   const [comment, setComment] = useState("");
-  const [testInput, setTestInput] = useState("");
-  const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
-  const [testing, setTesting] = useState(false);
   const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
   const [hasVoted, setHasVoted] = useState<number>(0);
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
@@ -145,27 +141,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
     }
   };
 
-  const handleTest = async () => {
-    if (!testInput) return;
-    setTesting(true);
-    try {
-      const result = await testPrompt(testInput);
-      setTestHistory(prev => [...prev, {
-        input: testInput,
-        output: result.output,
-        timestamp: new Date()
-      }]);
-      setTestInput("");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    } finally {
-      setTesting(false);
-    }
-  };
+  
 
   const handleVote = async (value: 1 | -1) => {
     try {
@@ -332,15 +308,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
               <MessageSquare className="h-4 w-4" />
               {comments.length}
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => setShowTest(true)}
-            >
-              <Bot className="h-4 w-4" />
-              Test
-            </Button>
+            
             <Button
               variant="ghost"
               size="sm"
@@ -406,72 +374,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         </DialogContent>
       </Dialog>
 
-      {/* Test Dialog */}
-      <Dialog open={showTest} onOpenChange={setShowTest}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>Test Prompt</DialogTitle>
-            <DialogDescription>Test this prompt with custom inputs</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <h3 className="font-medium mb-2">Prompt Template:</h3>
-                <pre className="whitespace-pre-wrap text-sm">{prompt.content}</pre>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setTestInput(prompt.content)}
-                className="w-full"
-              >
-                Paste Prompt as Input
-              </Button>
-              <div className="flex gap-2">
-                <Input
-                  value={testInput}
-                  onChange={(e) => setTestInput(e.target.value)}
-                  placeholder="Enter test input..."
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && testInput) {
-                      handleTest();
-                    }
-                  }}
-                />
-                <Button 
-                  onClick={handleTest} 
-                  disabled={testing || !testInput}
-                  className="shrink-0"
-                >
-                  {testing ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-            <ScrollArea className="h-[500px] border rounded-lg">
-              <div className="space-y-4 p-4">
-                {testHistory.map((result, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="font-medium text-sm">Input:</p>
-                      <p className="text-sm">{result.input}</p>
-                    </div>
-                    <div className="bg-primary/10 p-3 rounded-lg">
-                      <p className="font-medium text-sm">Output:</p>
-                      <pre className="text-sm whitespace-pre-wrap">{result.output}</pre>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(result.timestamp, { addSuffix: true })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-        </DialogContent>
-      </Dialog>
+      
     </Card>
   );
 }

@@ -4,7 +4,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { insertUserSchema } from "@db/schema";
@@ -15,17 +22,21 @@ export default function AuthPage() {
   const { login, register } = useUser();
   const { toast } = useToast();
   const [isLogin, setIsLogin] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoAttempted, setVideoAttempted] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(
       isLogin
         ? insertUserSchema.pick({ username: true, password: true })
-        : insertUserSchema.extend({
-            confirmPassword: z.string()
-          }).refine((data) => data.password === data.confirmPassword, {
-            message: "Passwords don't match",
-            path: ["confirmPassword"],
-          })
+        : insertUserSchema
+            .extend({
+              confirmPassword: z.string(),
+            })
+            .refine((data) => data.password === data.confirmPassword, {
+              message: "Passwords don't match",
+              path: ["confirmPassword"],
+            }),
     ),
     defaultValues: {
       username: "",
@@ -39,13 +50,13 @@ export default function AuthPage() {
 
   const onSubmit = async (data: any) => {
     try {
-      console.log('Form submitted:', data);
-      const result = await (isLogin 
+      console.log("Form submitted:", data);
+      const result = await (isLogin
         ? login({ username: data.username, password: data.password })
         : register(data));
 
-      console.log('Auth result:', result);
-      
+      console.log("Auth result:", result);
+
       if (!result.ok) {
         toast({
           variant: "destructive",
@@ -54,7 +65,7 @@ export default function AuthPage() {
         });
       }
     } catch (error: any) {
-      console.error('Form submission error:', error);
+      console.error("Form submission error:", error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -63,62 +74,63 @@ export default function AuthPage() {
     }
   };
 
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoAttempted, setVideoAttempted] = useState(false);
-
   useEffect(() => {
     const playVideo = async () => {
       if (!videoRef.current || videoAttempted) return;
-      
+
       try {
+        await videoRef.current.load();
         setVideoAttempted(true);
-        await videoRef.current.play();
-        console.log('Video playing successfully');
+        const playPromise = videoRef.current.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+          console.log("Video playing successfully");
+        }
       } catch (e) {
-        console.error('Video playback failed:', e);
-        // Fall back to a static background if video fails
+        console.error("Video playback failed:", e);
         if (videoRef.current) {
-          videoRef.current.style.display = 'none';
+          videoRef.current.style.display = "none";
         }
       }
     };
 
-    // Try to play when component mounts
     playVideo();
 
-    // Also try to play on user interaction
     const handleInteraction = () => {
-      playVideo();
+      if (!videoAttempted) {
+        playVideo();
+      }
     };
 
-    document.addEventListener('click', handleInteraction);
-    document.addEventListener('touchstart', handleInteraction);
+    window.addEventListener("click", handleInteraction);
+    window.addEventListener("touchstart", handleInteraction);
 
     return () => {
-      document.removeEventListener('click', handleInteraction);
-      document.removeEventListener('touchstart', handleInteraction);
+      window.removeEventListener("click", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
     };
   }, [videoAttempted]);
 
   return (
     <div className="relative min-h-screen flex items-center justify-center">
-      {/* Video Background */}
-      <video 
+      <video
         ref={videoRef}
-        className="videoTag absolute top-0 left-0 w-full h-full object-cover -z-10" 
-        autoPlay 
-        loop 
-        muted 
+        className="videoTag absolute top-0 left-0 w-full h-full object-cover -z-10"
+        autoPlay
+        loop
+        muted
         playsInline
+        preload="auto"
       >
-        <source src="/videos/Gen 3 Alpha Turbo Adventure.mp4" type="video/mp4" />
+        <source
+          src="/videos/Gen 3 Alpha Turbo Adventure.mp4"
+          type="video/mp4"
+        />
         Your browser does not support the video tag.
       </video>
 
-      {/* Overlay to ensure content is readable */}
       <div className="absolute inset-0 bg-background/80 backdrop-blur-sm -z-5" />
 
-      {/* Auth content */}
       <div className="relative z-10">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
@@ -131,7 +143,10 @@ export default function AuthPage() {
           </CardHeader>
           <CardContent>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="username"
@@ -145,7 +160,7 @@ export default function AuthPage() {
                     </FormItem>
                   )}
                 />
-                
+
                 {!isLogin && (
                   <>
                     <FormField
