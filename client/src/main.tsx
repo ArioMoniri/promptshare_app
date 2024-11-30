@@ -9,6 +9,7 @@ import HomePage from "./pages/HomePage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
 import UserProfile from "./components/UserProfile";
+import PromptEditor from "./components/PromptEditor";
 import Header from "./components/Header";
 import LoginPage from "./app/auth/login/page";
 import SignupPage from "./app/auth/signup/page";
@@ -45,6 +46,7 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/profile/:id" component={UserProfile} />
+          <Route path="/create" component={PromptEditor} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>

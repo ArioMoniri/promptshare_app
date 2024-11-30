@@ -3,55 +3,77 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import PromptCard from '../components/PromptCard'
 
-export default function CreatePrompt() {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
+export default function UserProfile() {
+  const [username, setUsername] = useState('johndoe')
+  const [email, setEmail] = useState('john@example.com')
+  const [openAIKey, setOpenAIKey] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Handle form submission here (e.g., send data to API)
-    console.log({ title, content })
-  }
+  // Mock data - replace with actual data fetching
+  const myPrompts = [/* ... */]
+  const likedPrompts = [/* ... */]
+  const starredPrompts = [/* ... */]
+  const forks = [/* ... */]
+  const issues = [/* ... */]
+  const pullRequests = [/* ... */]
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="container mx-auto p-4">
       <Card>
         <CardHeader>
-          <CardTitle>Create a New Prompt</CardTitle>
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-20 h-20">
+              <AvatarImage src="/placeholder-avatar.jpg" />
+              <AvatarFallback>JD</AvatarFallback>
+            </Avatar>
+            <div>
+              <CardTitle className="text-2xl">John Doe</CardTitle>
+              <CardDescription>@johndoe</CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Title
-              </label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-                Prompt Content
-              </label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                required
-                className="min-h-[200px]"
-              />
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button type="submit" className="w-full">Create Prompt</Button>
-          </CardFooter>
-        </form>
+        <CardContent>
+          <Tabs defaultValue="profile">
+            <TabsList>
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="prompts">My Prompts</TabsTrigger>
+              <TabsTrigger value="liked">Liked</TabsTrigger>
+              <TabsTrigger value="starred">Starred</TabsTrigger>
+              <TabsTrigger value="forks">Forks</TabsTrigger>
+              <TabsTrigger value="issues">Issues</TabsTrigger>
+              <TabsTrigger value="pullrequests">Pull Requests</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <form className="space-y-4">
+                <div>
+                  <label htmlFor="username">Username</label>
+                  <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="email">Email</label>
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div>
+                  <label htmlFor="openai-key">OpenAI API Key</label>
+                  <Input id="openai-key" type="password" value={openAIKey} onChange={(e) => setOpenAIKey(e.target.value)} />
+                </div>
+                <Button type="submit">Save Changes</Button>
+              </form>
+            </TabsContent>
+            <TabsContent value="prompts">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {myPrompts.map((prompt) => (
+                  <PromptCard key={prompt.id} {...prompt} />
+                ))}
+              </div>
+            </TabsContent>
+            {/* Similar structure for other tabs */}
+          </Tabs>
+        </CardContent>
       </Card>
     </div>
   )
