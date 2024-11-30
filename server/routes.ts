@@ -12,7 +12,7 @@ export function registerRoutes(app: Express) {
     try {
       const { sort = 'recent', search = '' } = req.query;
       
-      let query = db
+      const baseQuery = db
         .select({
           id: prompts.id,
           title: prompts.title,
@@ -36,25 +36,20 @@ export function registerRoutes(app: Express) {
         .leftJoin(users, eq(prompts.userId, users.id));
 
       // Add search filter if provided
-      if (search) {
-        query = query.where(
-          sql`${prompts.title} ILIKE ${`%${search}%`} OR 
-              ${prompts.content} ILIKE ${`%${search}%`} OR 
-              ${prompts.tags} ?& ${JSON.stringify([search])}`
-        );
-      }
+      let query = search 
+        ? baseQuery.where(
+            sql`${prompts.title} ILIKE ${`%${search}%`} OR 
+                ${prompts.content} ILIKE ${`%${search}%`} OR 
+                ${prompts.tags} ?& ${JSON.stringify([search])}`
+          )
+        : baseQuery;
 
       // Add sorting
-      switch (sort) {
-        case 'popular':
-          query = query.orderBy(desc(prompts.upvotes));
-          break;
-        case 'controversial':
-          query = query.orderBy(desc(sql`${prompts.upvotes} + ${prompts.downvotes}`));
-          break;
-        default: // 'recent'
-          query = query.orderBy(desc(prompts.createdAt));
-      }
+      const finalQuery = sort === 'popular'
+        ? query.orderBy(desc(prompts.upvotes))
+        : sort === 'controversial'
+        ? query.orderBy(desc(sql`${prompts.upvotes} + ${prompts.downvotes}`))
+        : query.orderBy(desc(prompts.createdAt));
 
       const allPrompts = await query;
       res.json(allPrompts);

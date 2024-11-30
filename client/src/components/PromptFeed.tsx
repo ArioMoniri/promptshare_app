@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { usePrompts } from '@/hooks/use-prompts';
+import { usePrompts } from '../hooks/use-prompts';
 import PromptCard from './PromptCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -13,16 +13,21 @@ export default function PromptFeed() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | ''>('');
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'controversial'>('recent');
+  
   const { prompts, isLoading, error } = usePrompts({ 
     sort: sortBy, 
     search: searchTerm,
-    category: selectedCategory 
+    category: selectedCategory || undefined
   });
+
+  const handleCategoryChange = (value: string) => {
+    setSelectedCategory(value as Category | '');
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex space-x-2">
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>

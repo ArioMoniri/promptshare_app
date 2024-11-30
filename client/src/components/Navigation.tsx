@@ -14,7 +14,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUser } from '@/hooks/use-user';
 
-export default function Navigation() {
+import type { User as DbUser } from "@db/schema";
+
+interface NavigationProps {
+  user?: DbUser | null;
+}
+
+export default function Navigation({ user: propUser }: NavigationProps) {
   const { user, logout } = useUser();
   const { theme, setTheme } = useTheme();
 

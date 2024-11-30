@@ -4,26 +4,30 @@ import { usePrompts } from "../hooks/use-prompts";
 import PromptCard from "../components/PromptCard";
 import PromptEditor from "../components/PromptEditor";
 import { Button } from "@/components/ui/button";
+import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlusCircle, TrendingUp, Clock, Search } from "lucide-react";
-import { Link } from "wouter";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function HomePage() {
   const { user } = useUser();
-  const { prompts, isLoading, error } = usePrompts();
   const [showEditor, setShowEditor] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState<'trending' | 'recent'>('trending');
+
+  const { prompts, isLoading, error } = usePrompts({
+    sort: activeTab === 'trending' ? 'popular' : 'recent',
+    search: searchQuery
+  });
 
   const filteredResults = useMemo(() => {
     setIsSearching(true);
     try {
       if (!searchQuery.trim() || !prompts) {
         setIsSearching(false);
-        return { profiles: [], prompts: [] };
+        return { profiles: [], prompts: prompts || [] };
       }
       
       const query = searchQuery.toLowerCase();
@@ -34,7 +38,8 @@ export default function HomePage() {
         const matches = 
           prompt.title?.toLowerCase().includes(query) ||
           prompt.description?.toLowerCase().includes(query) ||
-          prompt.content?.toLowerCase().includes(query);
+          prompt.content?.toLowerCase().includes(query) ||
+          prompt.tags?.some(tag => tag.toLowerCase().includes(query));
         
         if (prompt.user?.username?.toLowerCase().includes(query)) {
           profiles.add(prompt.user);
@@ -43,38 +48,35 @@ export default function HomePage() {
         return matches;
       });
       
-      // Filter prompts based on current tab
-      const tabPrompts = activeTab === 'trending'
-        ? [...matchingPrompts].sort((a, b) => {
-            const aScore = (a.upvotes ?? 0) + (a.comments?.length ?? 0);
-            const bScore = (b.upvotes ?? 0) + (b.comments?.length ?? 0);
-            return bScore - aScore;
-          })
-        : [...matchingPrompts].sort((a, b) => 
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-      
       setIsSearching(false);
       return {
         profiles: Array.from(profiles),
-        prompts: tabPrompts
+        prompts: matchingPrompts
       };
     } catch (error) {
       setIsSearching(false);
       return { profiles: [], prompts: [] };
     }
-  }, [prompts, searchQuery, activeTab]);
+  }, [prompts, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Prompt Engineering Hub</h1>
-          <Button onClick={() => setShowEditor(true)} className="gap-2">
+          <h1 className="text-3xl font-bold">Welcome to PromptShare</h1>
+          <Button asChild>
+            <Link href={user ? `/profile/${user.id}` : '/auth'}>
+              {user ? 'View Profile' : 'Sign In'}
+            </Link>
+          </Button>
+        </div>
+        
+        {user && (
+          <Button onClick={() => setShowEditor(true)} className="w-full gap-2">
             <PlusCircle className="h-4 w-4" />
             Create Prompt
           </Button>
-        </div>
+        )}
         
         <div className="relative">
           <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -104,7 +106,7 @@ export default function HomePage() {
             {filteredResults.profiles.length > 0 && (
               <div>
                 <h3 className="text-lg font-semibold mb-2">Matching Profiles</h3>
-                <div className="flex gap-4">
+                <div className="flex gap-4 flex-wrap">
                   {filteredResults.profiles.map(profile => (
                     <Link key={profile.id} href={`/profile/${profile.id}`}>
                       <div className="flex items-center gap-2 p-2 rounded-lg border hover:bg-accent">
@@ -123,7 +125,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">Matching Prompts</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(filteredResults.prompts ?? []).map(prompt => (
+                {filteredResults.prompts.map(prompt => (
                   <PromptCard key={prompt.id} prompt={prompt} />
                 ))}
               </div>

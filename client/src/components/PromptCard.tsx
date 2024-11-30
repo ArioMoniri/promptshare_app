@@ -39,7 +39,24 @@ interface PromptComment {
   } | null;
 }
 
-interface PromptWithComments extends Prompt {
+interface PromptWithComments {
+  id: number;
+  title: string;
+  content: string;
+  description: string | null;
+  tags: string[];
+  upvotes: number | null;
+  downvotes: number | null;
+  category: string | null;
+  version: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: number;
+  user: {
+    id: number;
+    username: string;
+    avatar: string | null;
+  } | null;
   comments?: PromptComment[];
 }
 

@@ -7,6 +7,17 @@ type PromptWithUser = Prompt & {
     username: string;
     avatar: string | null;
   } | null;
+  comments?: Array<{
+    id: number;
+    content: string;
+    createdAt: string;
+    user: {
+      id: number;
+      username: string;
+      avatar: string | null;
+    } | null;
+  }>;
+  tags: string[];
 };
 
 interface UsePromptsOptions {
