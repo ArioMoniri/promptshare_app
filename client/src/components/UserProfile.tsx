@@ -54,10 +54,11 @@ export default function UserProfile() {
     enabled: !!userId
   });
 
-  const { data: userPrompts = [] } = useQuery({
-    queryKey: ['userPrompts', userId],
+  const [promptsPage, setPromptsPage] = useState(1);
+  const { data: userPromptsData = { prompts: [], total: 0 }, isLoading } = useQuery({
+    queryKey: ['userPrompts', userId, promptsPage],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/prompts`);
+      const response = await fetch(`/api/users/${userId}/prompts?page=${promptsPage}&limit=10`);
       if (!response.ok) {
         throw new Error('Failed to fetch user prompts');
       }
@@ -66,10 +67,11 @@ export default function UserProfile() {
     enabled: !!userId
   });
 
-  const { data: starredPrompts = [] } = useQuery({
-    queryKey: ['starredPrompts', userId],
+  const [starredPage, setStarredPage] = useState(1);
+  const { data: starredPromptsData = { prompts: [], total: 0 } } = useQuery({
+    queryKey: ['starredPrompts', userId, starredPage],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/starred`);
+      const response = await fetch(`/api/users/${userId}/starred?page=${starredPage}&limit=10`);
       if (!response.ok) {
         throw new Error('Failed to fetch starred prompts');
       }
@@ -78,10 +80,11 @@ export default function UserProfile() {
     enabled: !!userId
   });
 
-  const { data: userForks = [] } = useQuery({
-    queryKey: ['userForks', userId],
+  const [forksPage, setForksPage] = useState(1);
+  const { data: userForksData = { forks: [], total: 0 } } = useQuery({
+    queryKey: ['userForks', userId, forksPage],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/forks`);
+      const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`);
       if (!response.ok) {
         throw new Error('Failed to fetch user forks');
       }

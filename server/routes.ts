@@ -368,30 +368,48 @@ export function registerRoutes(app: Express) {
   // Get user's prompts with proper user data
   app.get("/api/users/:id/prompts", async (req, res) => {
     const userId = parseInt(req.params.id);
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const offset = (page - 1) * limit;
+
     try {
-      const userPrompts = await db
-        .select({
-          id: prompts.id,
-          title: prompts.title,
-          content: prompts.content,
-          description: prompts.description,
-          tags: prompts.tags,
-          category: prompts.category,
-          version: prompts.version,
-          createdAt: prompts.createdAt,
-          updatedAt: prompts.updatedAt,
-          userId: prompts.userId,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
-        })
-        .from(prompts)
-        .leftJoin(users, eq(prompts.userId, users.id))
-        .where(eq(prompts.userId, userId))
-        .orderBy(desc(prompts.createdAt));
-      res.json(userPrompts);
+      const [userPrompts, total] = await Promise.all([
+        db
+          .select({
+            id: prompts.id,
+            title: prompts.title,
+            content: prompts.content,
+            description: prompts.description,
+            tags: prompts.tags,
+            category: prompts.category,
+            version: prompts.version,
+            createdAt: prompts.createdAt,
+            updatedAt: prompts.updatedAt,
+            userId: prompts.userId,
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
+          })
+          .from(prompts)
+          .leftJoin(users, eq(prompts.userId, users.id))
+          .where(eq(prompts.userId, userId))
+          .orderBy(desc(prompts.createdAt))
+          .limit(limit)
+          .offset(offset),
+        db
+          .select({ count: sql<number>`count(*)::int` })
+          .from(prompts)
+          .where(eq(prompts.userId, userId))
+      ]);
+
+      res.json({
+        prompts: userPrompts,
+        total: total[0].count,
+        page,
+        limit
+      });
     } catch (error) {
       console.error('Failed to fetch user prompts:', error);
       res.status(500).json({ error: "Failed to fetch user prompts" });
@@ -562,11 +580,12 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ error: "Prompt not found" });
       }
 
-      // Handle tags safely with proper parsing and error handling
-      const tags = Array.isArray(originalPrompt.prompt.tags) 
-        ? originalPrompt.prompt.tags
-        : originalPrompt.prompt.tags 
-          ? JSON.parse(originalPrompt.prompt.tags.replace(/'/g, '"'))
+      // Handle tags safely with improved array handling
+      const tags = originalPrompt.prompt.tags || [];
+      const sanitizedTags = Array.isArray(tags) 
+        ? tags 
+        : typeof tags === 'string'
+          ? JSON.parse(tags.replace(/'/g, '"'))
           : [];
 
       // Create fork within a transaction
@@ -578,7 +597,7 @@ export function registerRoutes(app: Express) {
             title: `Fork of ${originalPrompt.prompt.title}`,
             content: originalPrompt.prompt.content,
             description: originalPrompt.prompt.description,
-            tags: Array.isArray(tags) ? tags : [], // Ensure tags is always an array
+            tags: sanitizedTags,
             category: originalPrompt.prompt.category,
             userId: userId,
             version: originalPrompt.prompt.version || "1.0.0"
