@@ -81,8 +81,22 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
   const [optimisticDownvotes, setOptimisticDownvotes] = useState<number>(prompt.downvotes ?? 0);
   const [copied, setCopied] = useState(false);
-  const { starCount, isStarred, toggleStar } = useStarCount(prompt.id);
+  const [localStarCount, setLocalStarCount] = useState(0);
+  const [isStarred, setIsStarred] = useState(false);
   const [forkCount, setForkCount] = useState(0);
+
+  useEffect(() => {
+    if (prompt.id) {
+      // Fetch initial star count and status
+      fetch(`/api/prompts/${prompt.id}/stars`)
+        .then(res => res.json())
+        .then(data => {
+          setLocalStarCount(data.count);
+          setIsStarred(data.isStarred);
+        })
+        .catch(console.error);
+    }
+  }, [prompt.id]);
   const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();
 
@@ -255,12 +269,30 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
 
   const handleStar = async () => {
     try {
-      await toggleStar();
+      // Optimistic update
+      setIsStarred(!isStarred);
+      setLocalStarCount(prev => isStarred ? prev - 1 : prev + 1);
+
+      const response = await fetch(`/api/prompts/${prompt.id}/star`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) throw new Error('Failed to update star');
+
+      const data = await response.json();
+      setIsStarred(data.starred);
+      setLocalStarCount(data.count || 0);
+
       toast({
-        title: isStarred ? "Unstarred" : "Starred",
-        description: isStarred ? "Removed star from prompt" : "Added star to prompt",
+        title: data.starred ? "Starred" : "Unstarred",
+        description: data.starred ? "Added star to prompt" : "Removed star from prompt",
       });
     } catch (error) {
+      // Revert optimistic update
+      setIsStarred(!isStarred);
+      setLocalStarCount(prev => isStarred ? prev + 1 : prev - 1);
+      
       toast({
         variant: "destructive",
         title: "Error",
@@ -408,7 +440,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           {/* Star */}
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleStar}>
             <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
-            {starCount}
+            {localStarCount}
           </Button>
           
           {/* Share */}
