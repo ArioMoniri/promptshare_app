@@ -8,6 +8,8 @@ import { Toaster } from "@/components/ui/toaster";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
 import TrendingPage from "./pages/TrendingPage";
+import PromptDetail from "./pages/PromptDetail";
+import IssuesPage from "./pages/IssuesPage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
 import UserProfile from "./components/UserProfile";
