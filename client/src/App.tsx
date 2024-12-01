@@ -17,6 +17,7 @@ export default function App() {
           <Route path="/auth" component={AuthPage} />
           <Route path="/trending" component={TrendingPage} />
           <Route path="/profile/:id" component={UserProfile} />
+          <Route path="/prompts/:id" component={PromptDetail} />
         </Switch>
       </main>
       <Toaster />

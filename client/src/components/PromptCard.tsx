@@ -11,7 +11,7 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { useOpenAI } from "../hooks/use-openai";
 import { formatDistanceToNow } from "date-fns";
@@ -24,6 +24,9 @@ import {
   Bot,
   Send,
   Loader2,
+  Eye,
+  Star,
+  GitFork,
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import type { Prompt } from "@db/schema";
@@ -77,6 +80,10 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
   const [optimisticDownvotes, setOptimisticDownvotes] = useState<number>(prompt.downvotes ?? 0);
   const [copied, setCopied] = useState(false);
+  const [isStarred, setIsStarred] = useState(false);
+  const [starCount, setStarCount] = useState(0);
+  const [forkCount, setForkCount] = useState(0);
+  const [, navigate] = useLocation();
 
   const { testPrompt } = useOpenAI();
   const { toast } = useToast();
@@ -236,6 +243,62 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
     });
   };
 
+  const handleStar = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/star`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      setIsStarred(!isStarred);
+      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
+
+      toast({
+        title: isStarred ? "Unstarred" : "Starred",
+        description: isStarred ? "Removed star from prompt" : "Added star to prompt",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
+  const handleFork = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/fork`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        throw new Error(await response.text());
+      }
+
+      const forkedPrompt = await response.json();
+      setForkCount(prev => prev + 1);
+
+      toast({
+        title: "Forked",
+        description: "Successfully forked the prompt",
+      });
+
+      navigate(`/prompts/${forkedPrompt.id}`);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  };
+
   const handleShare = async () => {
     await navigator.clipboard.writeText(window.location.href);
     toast({
@@ -312,7 +375,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         <p className="text-sm text-muted-foreground">Version: {prompt.version}</p>
       </CardContent>
       <CardFooter className={cn("flex justify-between flex-wrap gap-2", compact && "p-0 pt-4")}>
-        <div className="flex space-x-2">
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -330,6 +393,33 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           >
             <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
             {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={handleStar}
+          >
+            <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
+            {starCount}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={handleFork}
+          >
+            <GitFork className="h-4 w-4" />
+            {forkCount}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => navigate(`/prompts/${prompt.id}`)}
+          >
+            <Eye className="h-4 w-4" />
+            View Details
           </Button>
         </div>
         {!compact && (
