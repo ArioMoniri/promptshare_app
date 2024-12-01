@@ -11,7 +11,18 @@ import { formatDistanceToNow } from 'date-fns';
 
 export default function IssuesPage() {
   const { id } = useParams();
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState<Array<{
+    id: number;
+    title: string;
+    description: string | null;
+    status: string;
+    createdAt: string;
+    user: {
+      id: number;
+      username: string;
+      avatar: string | null;
+    } | null;
+  }>>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const { toast } = useToast();

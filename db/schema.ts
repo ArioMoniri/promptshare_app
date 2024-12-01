@@ -1,86 +1,45 @@
-import { pgTable, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const users = pgTable("users", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  username: text("username").unique().notNull(),
+  username: text("username").notNull().unique(),
   password: text("password").notNull(),
-  email: text("email").unique().notNull(),
-  name: text("name").notNull(),
-  surname: text("surname").notNull(),
-  apiKey: text("api_key"),
+  email: text("email").notNull(),
+  name: text("name"),
+  surname: text("surname"),
   avatar: text("avatar"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  apiKey: text("api_key"),
+  createdAt: timestamp("created_at").defaultNow()
 });
 
 export const prompts = pgTable("prompts", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  userId: integer("user_id").references(() => users.id).notNull(),
   title: text("title").notNull(),
   content: text("content").notNull(),
   description: text("description"),
-  tags: text("tags"),
-  upvotes: integer("upvotes").default(0),
-  downvotes: integer("downvotes").default(0),
+  tags: jsonb("tags").$type<string[]>().default([]),
   category: text("category"),
   version: text("version").default("1.0.0"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
-
-export const comments = pgTable("comments", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  promptId: integer("prompt_id").references(() => prompts.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  content: text("content").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  upvotes: integer("upvotes").default(0),
+  downvotes: integer("downvotes").default(0),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 export const votes = pgTable("votes", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  promptId: integer("prompt_id").references(() => prompts.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  value: integer("value").notNull(), // 1 for promote, -1 for downvote
-  createdAt: timestamp("created_at").defaultNow().notNull(),
+  userId: integer("user_id").references(() => users.id),
+  promptId: integer("prompt_id").references(() => prompts.id),
+  value: integer("value").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
 });
 
-export const insertUserSchema = createInsertSchema(users);
-export const selectUserSchema = createSelectSchema(users);
-export type InsertUser = z.infer<typeof insertUserSchema>;
-export type User = z.infer<typeof selectUserSchema>;
-
-export const insertPromptSchema = createInsertSchema(prompts);
-export const selectPromptSchema = createSelectSchema(prompts);
-export type InsertPrompt = z.infer<typeof insertPromptSchema>;
-export const selectPromptWithUserSchema = selectPromptSchema.extend({
-  user: selectUserSchema.pick({
-    id: true,
-    username: true,
-    avatar: true
-  }).nullable(),
-});
-
-export type Prompt = z.infer<typeof selectPromptWithUserSchema> & {
-  comments?: Array<{
-    id: number;
-    content: string;
-    createdAt: string;
-    user: {
-      id: number;
-      username: string;
-      avatar: string | null;
-    } | null;
-  }>;
-};
-
-export const insertCommentSchema = createInsertSchema(comments);
-export const selectCommentSchema = createSelectSchema(comments);
-export type InsertComment = z.infer<typeof insertCommentSchema>;
-export type Comment = z.infer<typeof selectCommentSchema>;
-
-export const stars = pgTable("prompt_stars", {
+export const comments = pgTable("prompt_comments", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  content: text("content").notNull(),
   userId: integer("user_id").references(() => users.id),
   promptId: integer("prompt_id").references(() => prompts.id),
   createdAt: timestamp("created_at").defaultNow()
@@ -96,10 +55,8 @@ export const issues = pgTable("prompt_issues", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
-export const discussions = pgTable("prompt_discussions", {
+export const stars = pgTable("prompt_stars", {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  title: text("title").notNull(),
-  content: text("content"),
   userId: integer("user_id").references(() => users.id),
   promptId: integer("prompt_id").references(() => prompts.id),
   createdAt: timestamp("created_at").defaultNow()
@@ -134,3 +91,24 @@ export const pullRequests = pgTable("prompt_pull_requests", {
   userId: integer("user_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow()
 });
+
+// Zod schemas for input validation
+export const insertUserSchema = createInsertSchema(users);
+export const selectUserSchema = createSelectSchema(users);
+export type User = z.infer<typeof selectUserSchema>;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+
+export const insertPromptSchema = createInsertSchema(prompts);
+export const selectPromptSchema = createSelectSchema(prompts);
+export type Prompt = z.infer<typeof selectPromptSchema>;
+export type InsertPrompt = z.infer<typeof insertPromptSchema>;
+
+export const insertCommentSchema = createInsertSchema(comments);
+export const selectCommentSchema = createSelectSchema(comments);
+export type Comment = z.infer<typeof selectCommentSchema>;
+export type InsertComment = z.infer<typeof insertCommentSchema>;
+
+export const insertIssueSchema = createInsertSchema(issues);
+export const selectIssueSchema = createSelectSchema(issues);
+export type Issue = z.infer<typeof selectIssueSchema>;
+export type InsertIssue = z.infer<typeof insertIssueSchema>;

@@ -81,8 +81,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
   const [optimisticDownvotes, setOptimisticDownvotes] = useState<number>(prompt.downvotes ?? 0);
   const [copied, setCopied] = useState(false);
-  const [isStarred, setIsStarred] = useState(false);
-  const [starCount, setStarCount] = useState(0);
+  const { starCount, isStarred, toggleStar } = useStarCount(prompt.id);
   const [forkCount, setForkCount] = useState(0);
   const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();
@@ -256,34 +255,12 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
 
   const handleStar = async () => {
     try {
-      // Optimistically update UI
-      setIsStarred(!isStarred);
-      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
-
-      const response = await fetch(`/api/prompts/${prompt.id}/star`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update star');
-      }
-
-      const data = await response.json();
-      
-      // Update with actual server state
-      setIsStarred(data.starred);
-      setStarCount(data.count);
-
+      await toggleStar();
       toast({
-        title: data.starred ? "Starred" : "Unstarred",
-        description: data.starred ? "Added star to prompt" : "Removed star from prompt",
+        title: isStarred ? "Unstarred" : "Starred",
+        description: isStarred ? "Removed star from prompt" : "Added star to prompt",
       });
     } catch (error) {
-      // Revert optimistic update on error
-      setIsStarred(!isStarred);
-      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
-      
       toast({
         variant: "destructive",
         title: "Error",
