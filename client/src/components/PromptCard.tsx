@@ -27,6 +27,7 @@ import {
   Eye,
   Star,
   GitFork,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import type { Prompt } from "@db/schema";
@@ -83,6 +84,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [isStarred, setIsStarred] = useState(false);
   const [starCount, setStarCount] = useState(0);
   const [forkCount, setForkCount] = useState(0);
+  const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();
 
   const { testPrompt } = useOpenAI();
@@ -411,6 +413,15 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           >
             <GitFork className="h-4 w-4" />
             {forkCount}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowIssues(true)}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Issues
           </Button>
           <Button
             variant="outline"

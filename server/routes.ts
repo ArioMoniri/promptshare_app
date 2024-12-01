@@ -142,7 +142,7 @@ export function registerRoutes(app: Express) {
   // Handle promote/downvote
   app.post("/api/prompts/:id/vote", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not authenticated");
+      return res.status(401).send("Unauthorized");
     }
 
     const promptId = parseInt(req.params.id);
@@ -150,8 +150,8 @@ export function registerRoutes(app: Express) {
       return res.status(400).send("Invalid prompt ID");
     }
 
-    const value = parseInt(req.body.value); // 1 for promote, -1 for downvote
-    if (value !== 1 && value !== -1) {
+    const value = req.body.value;
+    if (value !== -1 && value !== 0 && value !== 1) {
       return res.status(400).send("Invalid vote value");
     }
 
@@ -377,6 +377,102 @@ export function registerRoutes(app: Express) {
       res.json({ value: vote?.value || 0 });
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch vote state" });
+    }
+  });
+  app.post("/api/prompts/:id/fork", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const promptId = parseInt(req.params.id);
+    const userId = req.user!.id;
+
+    try {
+      const [originalPrompt] = await db
+        .select()
+        .from(prompts)
+        .where(eq(prompts.id, promptId));
+
+      if (!originalPrompt) {
+        return res.status(404).send("Prompt not found");
+      }
+
+      // Create new prompt as fork
+      const [forkedPrompt] = await db
+        .insert(prompts)
+        .values({
+          title: `Fork of ${originalPrompt.title}`,
+          content: originalPrompt.content,
+          description: originalPrompt.description,
+          tags: originalPrompt.tags,
+          category: originalPrompt.category,
+          userId: userId,
+        })
+        .returning();
+
+      // Record fork relationship
+      await db
+        .insert(forks)
+        .values({
+          originalPromptId: promptId,
+          forkedPromptId: forkedPrompt.id,
+          userId: userId,
+        });
+
+      res.json(forkedPrompt);
+    } catch (error: any) {
+      console.error("Fork error:", error);
+      res.status(500).send("Failed to fork prompt");
+    }
+  });
+  app.post("/api/prompts/:id/star", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const promptId = parseInt(req.params.id);
+    const userId = req.user!.id;
+
+    try {
+      const [promptExists] = await db
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!promptExists) {
+        return res.status(404).send("Prompt not found");
+      }
+
+      const existing = await db
+        .select()
+        .from(stars)
+        .where(and(
+          eq(stars.promptId, promptId),
+          eq(stars.userId, userId)
+        ))
+        .limit(1);
+
+      if (existing.length) {
+        // Remove star if already starred
+        await db
+          .delete(stars)
+          .where(and(
+            eq(stars.promptId, promptId),
+            eq(stars.userId, userId)
+          ));
+        return res.json({ starred: false });
+      }
+
+      // Add star if not already starred
+      await db.insert(stars).values({ promptId, userId });
+      return res.json({ starred: true });
+    } catch (error: any) {
+      console.error('Star error:', error);
+      res.status(500).json({ 
+        error: "Failed to update star",
+        message: error.message 
+      });
     }
   });
 }
