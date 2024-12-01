@@ -54,7 +54,7 @@ export default function IssuesPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const response = await fetch(`/api/prompts/${id}/issues`, {

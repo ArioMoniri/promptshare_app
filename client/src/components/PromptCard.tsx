@@ -56,7 +56,7 @@ interface PromptWithComments {
   version: string | null;
   createdAt: Date | null;
   updatedAt: Date | null;
-  userId: number;
+  userId: number | null;
   user: {
     id: number;
     username: string;
@@ -77,6 +77,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [testInput, setTestInput] = useState("");
   const [testHistory, setTestHistory] = useState<Array<{ input: string; output: string; timestamp: Date }>>([]);
   const [testing, setTesting] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
   const [comments, setComments] = useState<PromptComment[]>(prompt.comments || []);
   const [hasVoted, setHasVoted] = useState<number>(0);
   const [optimisticUpvotes, setOptimisticUpvotes] = useState<number>(prompt.upvotes ?? 0);
