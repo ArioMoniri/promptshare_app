@@ -1,10 +1,11 @@
-import { ThemeProvider } from './components/theme-provider'
 import Navigation from './components/Navigation'
 import { Toaster } from './components/ui/toaster'
 import { Route, Switch } from 'wouter'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
-import ProfilePage from './pages/ProfilePage'
+import TrendingPage from './pages/TrendingPage'
+import UserProfile from './components/UserProfile'
+import { ThemeProvider } from "@/components/ui/theme-provider"
 
 export default function App() {
   return (
@@ -14,7 +15,8 @@ export default function App() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/auth" component={AuthPage} />
-          <Route path="/profile/:id" component={ProfilePage} />
+          <Route path="/trending" component={TrendingPage} />
+          <Route path="/profile/:id" component={UserProfile} />
         </Switch>
       </main>
       <Toaster />

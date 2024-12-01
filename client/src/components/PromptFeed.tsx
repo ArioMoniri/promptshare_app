@@ -12,7 +12,7 @@ type Category = typeof categories[number];
 export default function PromptFeed() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<Category | ''>('');
-  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'controversial'>('recent');
+  const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'controversial' | 'trending'>('trending');
   
   const { prompts, isLoading, error } = usePrompts({ 
     sort: sortBy, 
@@ -46,20 +46,52 @@ export default function PromptFeed() {
           className="flex-grow"
         />
         <Button
-          variant={sortBy === 'recent' ? 'default' : 'outline'}
-          onClick={() => setSortBy('recent')}
+          variant={sortBy === 'trending' ? 'default' : 'outline'}
+          onClick={() => {
+            setSortBy('trending');
+            if (window.navigator.vibrate) {
+              window.navigator.vibrate(50);
+            }
+          }}
+          className="relative active:scale-95 transition-transform"
         >
+          <TrendingUp className="mr-2 h-4 w-4" />
+          Trending
+        </Button>
+        <Button
+          variant={sortBy === 'recent' ? 'default' : 'outline'}
+          onClick={() => {
+            setSortBy('recent');
+            if (window.navigator.vibrate) {
+              window.navigator.vibrate(50);
+            }
+          }}
+          className="relative active:scale-95 transition-transform"
+        >
+          <Clock className="mr-2 h-4 w-4" />
           Recent
         </Button>
         <Button
           variant={sortBy === 'popular' ? 'default' : 'outline'}
-          onClick={() => setSortBy('popular')}
+          onClick={() => {
+            setSortBy('popular');
+            if (window.navigator.vibrate) {
+              window.navigator.vibrate(50);
+            }
+          }}
+          className="relative active:scale-95 transition-transform"
         >
           Popular
         </Button>
         <Button
           variant={sortBy === 'controversial' ? 'default' : 'outline'}
-          onClick={() => setSortBy('controversial')}
+          onClick={() => {
+            setSortBy('controversial');
+            if (window.navigator.vibrate) {
+              window.navigator.vibrate(50);
+            }
+          }}
+          className="relative active:scale-95 transition-transform"
         >
           Controversial
         </Button>

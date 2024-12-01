@@ -21,7 +21,7 @@ type PromptWithUser = Prompt & {
 };
 
 interface UsePromptsOptions {
-  sort?: 'recent' | 'popular' | 'controversial';
+  sort?: 'recent' | 'popular' | 'controversial' | 'trending';
   search?: string;
   category?: string;
 }

@@ -44,12 +44,23 @@ export function registerRoutes(app: Express) {
           )
         : baseQuery;
 
+      // Add trending calculation
+      const trendingScore = sql`(
+        (${prompts.upvotes} - ${prompts.downvotes}) / 
+        POWER(EXTRACT(EPOCH FROM (NOW() - ${prompts.createdAt})) / 3600 + 2, 1.8)
+      )`;
+
       // Add sorting
-      const finalQuery = sort === 'popular'
-        ? query.orderBy(desc(prompts.upvotes))
+      const finalQuery = sort === 'trending'
+        ? query.orderBy(desc(trendingScore))
+        : sort === 'popular'
+        ? query.orderBy(desc(sql`${prompts.upvotes} - ${prompts.downvotes}`))
         : sort === 'controversial'
-        ? query.orderBy(desc(sql`(${prompts.upvotes} + ${prompts.downvotes}) * CASE WHEN ${prompts.downvotes} > 0 THEN 1.0 * ${prompts.downvotes} / ${prompts.upvotes} ELSE 0 END`))
-        : query.orderBy(desc(prompts.createdAt)); // 'recent' - show most recently published
+        ? query.orderBy(desc(sql`(${prompts.upvotes} + ${prompts.downvotes}) * 
+            CASE WHEN ${prompts.downvotes} > 0 
+            THEN 1.0 * ${prompts.downvotes} / ${prompts.upvotes} 
+            ELSE 0 END`))
+        : query.orderBy(desc(prompts.createdAt));
 
       const allPrompts = await query;
       res.json(allPrompts);
