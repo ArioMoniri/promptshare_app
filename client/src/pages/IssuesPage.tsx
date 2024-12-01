@@ -24,7 +24,7 @@ interface Issue {
 
 export default function IssuesPage() {
   const { id } = useParams();
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const { toast } = useToast();
@@ -34,16 +34,23 @@ export default function IssuesPage() {
   }, [id]);
 
   const fetchIssues = async () => {
+    if (!id) return;
+    
     try {
       const response = await fetch(`/api/prompts/${id}/issues`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch issues');
+      }
       const data = await response.json();
-      setIssues(data);
+      setIssues(Array.isArray(data) ? data : []);
     } catch (error) {
+      console.error('Failed to fetch issues:', error);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to fetch issues"
       });
+      setIssues([]);
     }
   };
 
