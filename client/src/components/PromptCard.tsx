@@ -433,7 +433,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           )}
           
           {/* View Details */}
-          <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
+          <Button variant="default" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
             <Eye className="h-4 w-4" />
             View Details
           </Button>
