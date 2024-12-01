@@ -562,19 +562,23 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ error: "Prompt not found" });
       }
 
-      // Handle tags safely
-      const tags = Array.isArray(originalPrompt.prompt.tags) ? originalPrompt.prompt.tags : [];
+      // Handle tags safely with proper parsing and error handling
+      const tags = Array.isArray(originalPrompt.prompt.tags) 
+        ? originalPrompt.prompt.tags
+        : originalPrompt.prompt.tags 
+          ? JSON.parse(originalPrompt.prompt.tags.replace(/'/g, '"'))
+          : [];
 
       // Create fork within a transaction
       const result = await db.transaction(async (tx) => {
-        // Create new prompt
+        // Create new prompt with proper tags handling
         const [forkedPrompt] = await tx
           .insert(prompts)
           .values({
             title: `Fork of ${originalPrompt.prompt.title}`,
             content: originalPrompt.prompt.content,
             description: originalPrompt.prompt.description,
-            tags: tags,
+            tags: Array.isArray(tags) ? tags : [], // Ensure tags is always an array
             category: originalPrompt.prompt.category,
             userId: userId,
             version: originalPrompt.prompt.version || "1.0.0"
