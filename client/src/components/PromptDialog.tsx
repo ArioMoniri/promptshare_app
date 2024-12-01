@@ -1,7 +1,8 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy } from "lucide-react";
+import { ArrowLeft, Copy, ThumbsUp, ThumbsDown, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Prompt {
@@ -9,6 +10,9 @@ interface Prompt {
   title: string;
   content: string;
   description?: string;
+  user?: {
+    username: string;
+  };
 }
 
 interface PromptDialogProps {
@@ -19,25 +23,125 @@ interface PromptDialogProps {
 
 export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) {
   const { toast } = useToast();
+  const [upvoteCount, setUpvoteCount] = useState(0);
+  const [downvoteCount, setDownvoteCount] = useState(0);
+  const [starCount, setStarCount] = useState(0);
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(prompt.content);
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(prompt.content);
     toast({
       title: "Copied",
       description: "Prompt copied to clipboard"
     });
   };
 
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(`sRef: ${prompt.id}`);
+    toast({
+      title: "Copied",
+      description: "Reference ID copied to clipboard"
+    });
+  };
+
+  const handlePromote = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: 1 }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to upvote');
+      
+      setUpvoteCount(prev => prev + 1);
+      toast({
+        title: "Success",
+        description: "Successfully promoted the prompt"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  };
+
+  const handleDownvote = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: -1 }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to downvote');
+      
+      setDownvoteCount(prev => prev + 1);
+      toast({
+        title: "Success",
+        description: "Successfully downvoted the prompt"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  };
+
+  const handleStar = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/star`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (!response.ok) throw new Error('Failed to star');
+      
+      setStarCount(prev => prev + 1);
+      toast({
+        title: "Success",
+        description: "Successfully starred the prompt"
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message
+      });
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">{prompt.title}</h2>
-          <div className="flex gap-2">
-            <Button variant="ghost" size="sm" onClick={copyToClipboard}>
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
+      <DialogContent className="max-w-4xl max-h-[90vh]">
+        <DialogTitle className="sr-only">View Prompt</DialogTitle>
+        <div className="flex items-center gap-4 mb-4">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => onOpenChange(false)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back
+          </Button>
+          <h2 className="text-2xl font-bold flex-grow">{prompt.title}</h2>
+          <Button variant="ghost" size="sm" onClick={copyToClipboard}>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">
+          <span>by {prompt.user?.username}</span>
+          <span>•</span>
+          <span>sRef: {prompt.id}</span>
+          <Button variant="ghost" size="sm" onClick={handleCopy}>
+            <Copy className="h-4 w-4" />
+          </Button>
         </div>
 
         <Tabs defaultValue="prompt">
@@ -47,12 +151,11 @@ export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) 
             <TabsTrigger value="issues">Issues</TabsTrigger>
             <TabsTrigger value="forks">Forks</TabsTrigger>
             <TabsTrigger value="versions">Versions</TabsTrigger>
-            <TabsTrigger value="pull-requests">Pull Requests</TabsTrigger>
           </TabsList>
 
           <TabsContent value="prompt">
             <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg relative">
+              <div className="bg-muted p-4 rounded-lg">
                 <pre className="whitespace-pre-wrap">{prompt.content}</pre>
               </div>
               {prompt.description && (
@@ -60,7 +163,7 @@ export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) 
               )}
             </div>
           </TabsContent>
-          
+
           <TabsContent value="discussion">
             <div className="p-4 text-muted-foreground">Discussion feature coming soon</div>
           </TabsContent>
@@ -76,11 +179,22 @@ export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) 
           <TabsContent value="versions">
             <div className="p-4 text-muted-foreground">Version history coming soon</div>
           </TabsContent>
-
-          <TabsContent value="pull-requests">
-            <div className="p-4 text-muted-foreground">Pull requests coming soon</div>
-          </TabsContent>
         </Tabs>
+
+        <div className="flex gap-2 mt-4">
+          <Button onClick={handlePromote} className="flex-1">
+            <ThumbsUp className="h-4 w-4 mr-2" />
+            Promote ({upvoteCount})
+          </Button>
+          <Button onClick={handleDownvote} className="flex-1">
+            <ThumbsDown className="h-4 w-4 mr-2" />
+            Downvote ({downvoteCount})
+          </Button>
+          <Button onClick={handleStar} className="flex-1">
+            <Star className="h-4 w-4 mr-2" />
+            Star ({starCount})
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
