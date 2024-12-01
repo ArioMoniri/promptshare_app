@@ -420,23 +420,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
             Share
           </Button>
           
-          {/* View Details */}
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
-            <Eye className="h-4 w-4" />
-            View Details
-          </Button>
-        </div>
-        {!compact && (
-          <>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setShowComments(true)}
-            >
-              <MessageSquare className="h-4 w-4" />
-              {comments.length}
-            </Button>
+          {!compact && (
             <Button
               variant="ghost"
               size="sm"
@@ -446,17 +430,14 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
               <Bot className="h-4 w-4" />
               Test
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={handleShare}
-            >
-              <Share2 className="h-4 w-4" />
-              Share
-            </Button>
-          </>
-        )}
+          )}
+          
+          {/* View Details */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
+            <Eye className="h-4 w-4" />
+            View Details
+          </Button>
+        </div>
       </CardFooter>
 
       {/* Comments Dialog */}
