@@ -10,6 +10,8 @@ interface Prompt {
   title: string;
   content: string;
   description?: string;
+  originalPromptId?: number;
+  userId?: number;
   user?: {
     username: string;
   };
@@ -26,6 +28,9 @@ export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) 
   const [upvoteCount, setUpvoteCount] = useState(0);
   const [downvoteCount, setDownvoteCount] = useState(0);
   const [starCount, setStarCount] = useState(0);
+  const [isEditing, setIsEditing] = useState(false);
+  const isForked = prompt.originalPromptId != null;
+  const canEdit = isForked && prompt.userId === prompt.user?.id;
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(prompt.content);
@@ -130,9 +135,17 @@ export function PromptDialog({ prompt, open, onOpenChange }: PromptDialogProps) 
             Back
           </Button>
           <h2 className="text-2xl font-bold flex-grow">{prompt.title}</h2>
-          <Button variant="ghost" size="sm" onClick={copyToClipboard}>
-            <Copy className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            {canEdit && (
+              <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={copyToClipboard}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2 mb-4 text-sm text-muted-foreground">

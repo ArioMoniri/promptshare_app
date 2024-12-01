@@ -86,22 +86,31 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [localStarCount, setLocalStarCount] = useState(0);
   const [isStarred, setIsStarred] = useState(false);
   const [forkCount, setForkCount] = useState(0);
+  const [isForked, setIsForked] = useState(false);
 
   useEffect(() => {
-    // Fetch star count periodically
-    const fetchStarCount = async () => {
+    // Fetch star and fork count
+    const fetchCounts = async () => {
       try {
-        const response = await fetch(`/api/prompts/${prompt.id}/stars`);
-        const data = await response.json();
-        setLocalStarCount(data.count);
-        setIsStarred(data.isStarred);
+        const [starResponse, forkResponse] = await Promise.all([
+          fetch(`/api/prompts/${prompt.id}/stars`),
+          fetch(`/api/prompts/${prompt.id}/forks`)
+        ]);
+        
+        const starData = await starResponse.json();
+        const forkData = await forkResponse.json();
+        
+        setLocalStarCount(starData.count);
+        setIsStarred(starData.isStarred);
+        setForkCount(forkData.count);
+        setIsForked(forkData.isForked);
       } catch (error) {
-        console.error('Failed to fetch star count:', error);
+        console.error('Failed to fetch counts:', error);
       }
     };
 
-    fetchStarCount();
-    const interval = setInterval(fetchStarCount, 5000); // Update every 5 seconds
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 5000); // Update every 5 seconds
     return () => clearInterval(interval);
   }, [prompt.id]);
   const [showIssues, setShowIssues] = useState(false);
