@@ -443,16 +443,41 @@ export default function UserProfile() {
               {userForks.map(({ fork, original }) => (
                 <Card key={fork.id}>
                   <CardHeader>
-                    <CardTitle>{fork.title}</CardTitle>
-                    <div className="text-sm text-muted-foreground">
-                      Forked from {original.title} by {original.user.username}
+                    <div className="flex items-center space-x-4">
+                      <Avatar>
+                        <AvatarImage src={original.user?.avatar || undefined} />
+                        <AvatarFallback>{original.user?.username?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle>{fork.title}</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Forked from{' '}
+                          <Link href={`/profile/${original.user?.id}`} className="hover:underline">
+                            {original.user?.username}
+                          </Link>
+                          's{' '}
+                          <Link href={`/prompts/${original.id}`} className="hover:underline">
+                            {original.title}
+                          </Link>
+                        </p>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p>{fork.description}</p>
+                    <p className="text-sm text-muted-foreground">{fork.description}</p>
+                    {fork.tags?.map((tag) => (
+                      <Badge key={tag} variant="secondary" className="mr-2">
+                        {tag}
+                      </Badge>
+                    ))}
                   </CardContent>
                 </Card>
               ))}
+              {userForks.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  No forks yet
+                </div>
+              )}
             </div>
           </TabsContent>
 
