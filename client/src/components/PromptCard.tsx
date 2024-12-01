@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { PromptDialog } from "./PromptDialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,8 +54,8 @@ interface PromptWithComments {
   downvotes: number | null;
   category: string | null;
   version: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | null;
+  updatedAt: Date | null;
   userId: number;
   user: {
     id: number;
@@ -466,10 +467,15 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           )}
           
           {/* View */}
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setShowPrompt(true)}>
             <Eye className="h-4 w-4" />
             View
           </Button>
+          <PromptDialog 
+            prompt={prompt}
+            open={showPrompt}
+            onOpenChange={setShowPrompt}
+          />
         </div>
       </CardFooter>
 
