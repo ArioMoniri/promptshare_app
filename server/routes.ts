@@ -434,7 +434,8 @@ export function registerRoutes(app: Express) {
     const userId = req.user!.id;
 
     try {
-      const [existingVote] = await db
+      // Check if user has already starred
+      const [existingStar] = await db
         .select()
         .from(stars)
         .where(
@@ -445,7 +446,7 @@ export function registerRoutes(app: Express) {
         )
         .limit(1);
 
-      if (existingVote) {
+      if (existingStar) {
         // Remove star if already starred
         await db
           .delete(stars)
@@ -460,21 +461,54 @@ export function registerRoutes(app: Express) {
 
       // Add star if not already starred
       await db.insert(stars).values({ promptId, userId });
-      return res.json({ starred: true });
-    } catch (error: any) {
-      // Check if error is due to unique constraint violation
-      if (error.code === '23505') { // PostgreSQL unique violation code
-        return res.status(400).json({ 
-          error: "Already starred",
-          message: "You have already starred this prompt"
-        });
-      }
       
+      // Get updated star count
+      const [{ count }] = await db
+        .select({
+          count: sql<number>`count(*)::int`
+        })
+        .from(stars)
+        .where(eq(stars.promptId, promptId));
+
+      return res.json({ starred: true, count });
+    } catch (error) {
       console.error('Star error:', error);
-      res.status(500).json({ 
-        error: "Failed to update star",
-        message: error.message 
-      });
+      res.status(500).json({ error: "Failed to update star" });
+    }
+  });
+
+  // Add endpoint to get star count and user's star status
+  app.get("/api/prompts/:id/stars", async (req, res) => {
+    const promptId = parseInt(req.params.id);
+    const userId = req.user?.id;
+
+    try {
+      const [{ count }] = await db
+        .select({
+          count: sql<number>`count(*)::int`
+        })
+        .from(stars)
+        .where(eq(stars.promptId, promptId));
+
+      let isStarred = false;
+      if (userId) {
+        const [userStar] = await db
+          .select()
+          .from(stars)
+          .where(
+            and(
+              eq(stars.promptId, promptId),
+              eq(stars.userId, userId)
+            )
+          )
+          .limit(1);
+        isStarred = !!userStar;
+      }
+
+      res.json({ count, isStarred });
+    } catch (error) {
+      console.error('Get stars error:', error);
+      res.status(500).json({ error: "Failed to get stars" });
     }
   });
 

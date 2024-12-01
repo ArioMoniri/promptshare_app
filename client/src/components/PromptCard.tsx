@@ -107,6 +107,15 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         }
       };
       fetchVoteState();
+
+      // Fetch initial star count and status
+      fetch(`/api/prompts/${prompt.id}/stars`)
+        .then(res => res.json())
+        .then(data => {
+          setStarCount(data.count);
+          setIsStarred(data.isStarred);
+        })
+        .catch(console.error);
     }
   }, [prompt.id]);
 
@@ -247,27 +256,38 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
 
   const handleStar = async () => {
     try {
+      // Optimistically update UI
+      setIsStarred(!isStarred);
+      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
+
       const response = await fetch(`/api/prompts/${prompt.id}/star`, {
         method: 'POST',
         credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        throw new Error('Failed to update star');
       }
 
-      setIsStarred(!isStarred);
-      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
+      const data = await response.json();
+      
+      // Update with actual server state
+      setIsStarred(data.starred);
+      setStarCount(data.count);
 
       toast({
-        title: isStarred ? "Unstarred" : "Starred",
-        description: isStarred ? "Removed star from prompt" : "Added star to prompt",
+        title: data.starred ? "Starred" : "Unstarred",
+        description: data.starred ? "Added star to prompt" : "Removed star from prompt",
       });
-    } catch (error: any) {
+    } catch (error) {
+      // Revert optimistic update on error
+      setIsStarred(!isStarred);
+      setStarCount(prev => isStarred ? prev - 1 : prev + 1);
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "Failed to update star"
       });
     }
   };
