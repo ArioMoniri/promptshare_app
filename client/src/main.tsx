@@ -7,6 +7,7 @@ import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import HomePage from "./pages/HomePage";
 import AuthPage from "./pages/AuthPage";
+import TrendingPage from "./pages/TrendingPage";
 import { Loader2 } from "lucide-react";
 import { useUser } from "./hooks/use-user";
 import UserProfile from "./components/UserProfile";
@@ -33,6 +34,8 @@ function Router() {
       <main className="container mx-auto px-4 py-6">
         <Switch>
           <Route path="/" component={HomePage} />
+          <Route path="/auth" component={AuthPage} />
+          <Route path="/trending" component={TrendingPage} />
           <Route path="/profile/:id" component={UserProfile} />
           <Route>404 Page Not Found</Route>
         </Switch>

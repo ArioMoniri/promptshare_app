@@ -4,7 +4,7 @@ import PromptCard from './PromptCard';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TrendingUp, Clock } from 'lucide-react';
 
 const categories = ['Writing', 'Coding', 'Design', 'Business', 'Other'] as const;
 type Category = typeof categories[number];
@@ -53,7 +53,7 @@ export default function PromptFeed() {
               window.navigator.vibrate(50);
             }
           }}
-          className="relative active:scale-95 transition-transform"
+          className="relative active:scale-95 transition-all hover:bg-accent/80 transform duration-200"
         >
           <TrendingUp className="mr-2 h-4 w-4" />
           Trending
@@ -66,7 +66,7 @@ export default function PromptFeed() {
               window.navigator.vibrate(50);
             }
           }}
-          className="relative active:scale-95 transition-transform"
+          className="relative active:scale-95 transition-all hover:bg-accent/80 transform duration-200"
         >
           <Clock className="mr-2 h-4 w-4" />
           Recent
@@ -79,7 +79,7 @@ export default function PromptFeed() {
               window.navigator.vibrate(50);
             }
           }}
-          className="relative active:scale-95 transition-transform"
+          className="relative active:scale-95 transition-all hover:bg-accent/80 transform duration-200"
         >
           Popular
         </Button>
@@ -91,7 +91,7 @@ export default function PromptFeed() {
               window.navigator.vibrate(50);
             }
           }}
-          className="relative active:scale-95 transition-transform"
+          className="relative active:scale-95 transition-all hover:bg-accent/80 transform duration-200"
         >
           Controversial
         </Button>

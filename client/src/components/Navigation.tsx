@@ -43,7 +43,11 @@ export default function Navigation({ user: propUser }: NavigationProps) {
           PromptShare
         </Link>
         <nav className="flex items-center space-x-4">
-          <Button asChild variant="ghost" className="text-foreground hover:text-primary">
+          <Button 
+            asChild 
+            variant="ghost" 
+            className="text-foreground hover:text-primary active:scale-95 transition-all"
+          >
             <Link href="/trending">
               <TrendingUp className="mr-2 h-4 w-4" />
               Trending
