@@ -21,6 +21,7 @@ export default function App() {
           <Route path="/profile/:id" component={UserProfile} />
           <Route path="/prompts/:id" component={PromptDetail} />
           <Route path="/prompts/:id/issues" component={IssuesPage} />
+          <Route>404 Page Not Found</Route>
         </Switch>
       </main>
       <Toaster />

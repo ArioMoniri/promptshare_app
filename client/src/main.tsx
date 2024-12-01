@@ -37,6 +37,8 @@ function Router() {
           <Route path="/auth" component={AuthPage} />
           <Route path="/trending" component={TrendingPage} />
           <Route path="/profile/:id" component={UserProfile} />
+          <Route path="/prompts/:id" component={PromptDetail} />
+          <Route path="/prompts/:id/issues" component={IssuesPage} />
           <Route>404 Page Not Found</Route>
         </Switch>
       </main>
