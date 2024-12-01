@@ -20,7 +20,7 @@ export const prompts = pgTable("prompts", {
   title: text("title").notNull(),
   content: text("content").notNull(),
   description: text("description"),
-  tags: text("tags").array().default([]),
+  tags: text("tags"),
   upvotes: integer("upvotes").default(0),
   downvotes: integer("downvotes").default(0),
   category: text("category"),
@@ -42,24 +42,6 @@ export const votes = pgTable("votes", {
   promptId: integer("prompt_id").references(() => prompts.id).notNull(),
   userId: integer("user_id").references(() => users.id).notNull(),
   value: integer("value").notNull(), // 1 for promote, -1 for downvote
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const promptVersions = pgTable("prompt_versions", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  promptId: integer("prompt_id").references(() => prompts.id).notNull(),
-  version: integer("version").notNull(),
-  content: text("content").notNull(),
-  changes: text("changes"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
-export const promptResults = pgTable("prompt_results", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  promptId: integer("prompt_id").references(() => prompts.id).notNull(),
-  userId: integer("user_id").references(() => users.id).notNull(),
-  input: text("input").notNull(),
-  output: jsonb("output").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -96,3 +78,59 @@ export const insertCommentSchema = createInsertSchema(comments);
 export const selectCommentSchema = createSelectSchema(comments);
 export type InsertComment = z.infer<typeof insertCommentSchema>;
 export type Comment = z.infer<typeof selectCommentSchema>;
+
+export const stars = pgTable("prompt_stars", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  userId: integer("user_id").references(() => users.id),
+  promptId: integer("prompt_id").references(() => prompts.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const issues = pgTable("prompt_issues", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").default("open"),
+  userId: integer("user_id").references(() => users.id),
+  promptId: integer("prompt_id").references(() => prompts.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const discussions = pgTable("prompt_discussions", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  content: text("content"),
+  userId: integer("user_id").references(() => users.id),
+  promptId: integer("prompt_id").references(() => prompts.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const forks = pgTable("prompt_forks", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  originalPromptId: integer("original_prompt_id").references(() => prompts.id),
+  forkedPromptId: integer("forked_prompt_id").references(() => prompts.id),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const promptVersions = pgTable("prompt_versions", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  promptId: integer("prompt_id").references(() => prompts.id),
+  version: text("version").notNull(),
+  content: text("content").notNull(),
+  description: text("description"),
+  changes: text("changes"),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const pullRequests = pgTable("prompt_pull_requests", {
+  id: integer().primaryKey().generatedAlwaysAsIdentity(),
+  title: text("title").notNull(),
+  description: text("description"),
+  status: text("status").default("open"),
+  sourcePromptId: integer("source_prompt_id").references(() => prompts.id),
+  targetPromptId: integer("target_prompt_id").references(() => prompts.id),
+  userId: integer("user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
