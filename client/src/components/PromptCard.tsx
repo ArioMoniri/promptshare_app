@@ -97,21 +97,32 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           fetch(`/api/prompts/${prompt.id}/forks`)
         ]);
         
+        if (!starResponse.ok || !forkResponse.ok) {
+          throw new Error('Failed to fetch counts - Server error');
+        }
+        
         const starData = await starResponse.json();
         const forkData = await forkResponse.json();
         
-        setLocalStarCount(starData.count);
-        setIsStarred(starData.isStarred);
-        setForkCount(forkData.count);
-        setIsForked(forkData.isForked);
+        setLocalStarCount(starData.count || 0);
+        setIsStarred(starData.isStarred || false);
+        setForkCount(forkData.count || 0);
+        setIsForked(forkData.isForked || false);
       } catch (error) {
         console.error('Failed to fetch counts:', error);
+        // Set defaults on error
+        setLocalStarCount(0);
+        setIsStarred(false);
+        setForkCount(0);
+        setIsForked(false);
       }
     };
 
-    fetchCounts();
-    const interval = setInterval(fetchCounts, 5000); // Update every 5 seconds
-    return () => clearInterval(interval);
+    if (prompt.id) {
+      fetchCounts();
+      const interval = setInterval(fetchCounts, 5000); // Update every 5 seconds
+      return () => clearInterval(interval);
+    }
   }, [prompt.id]);
   const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();

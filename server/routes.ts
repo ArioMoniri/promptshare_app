@@ -605,6 +605,256 @@ export function registerRoutes(app: Express) {
     }
   });
 
+  // Get fork count and user's fork status
+  app.get("/api/prompts/:id/forks", async (req, res) => {
+    try {
+      const promptId = parseInt(req.params.id);
+      const userId = req.user?.id;
+
+      if (isNaN(promptId)) {
+        return res.status(400).json({ error: "Invalid prompt ID", count: 0, isForked: false });
+      }
+
+      // First verify the prompt exists
+      const [promptExists] = await db
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!promptExists) {
+        return res.status(404).json({ error: "Prompt not found", count: 0, isForked: false });
+      }
+
+      const [{ count }] = await db
+        .select({
+          count: sql<number>`count(*)::int`
+        })
+        .from(forks)
+        .where(eq(forks.originalPromptId, promptId));
+
+      let isForked = false;
+      if (userId) {
+        const [userFork] = await db
+          .select()
+          .from(forks)
+          .where(
+            and(
+              eq(forks.originalPromptId, promptId),
+              eq(forks.userId, userId)
+            )
+          )
+          .limit(1);
+        isForked = !!userFork;
+      }
+
+      res.json({ count: count || 0, isForked });
+    } catch (error: any) {
+      console.error('Get forks error:', error);
+      res.status(500).json({ 
+        error: "Failed to get fork count",
+        message: error.message,
+        count: 0,
+        isForked: false
+      });
+    }
+  });
+
+  // Get star count and user's star status
+  app.get("/api/prompts/:id/stars", async (req, res) => {
+    try {
+      const promptId = parseInt(req.params.id);
+      const userId = req.user?.id;
+
+      if (isNaN(promptId)) {
+        return res.status(400).json({ error: "Invalid prompt ID", count: 0, isStarred: false });
+      }
+
+      // First verify the prompt exists
+      const [promptExists] = await db
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!promptExists) {
+        return res.status(404).json({ error: "Prompt not found", count: 0, isStarred: false });
+      }
+
+      const [{ count }] = await db
+        .select({
+          count: sql<number>`count(*)::int`
+        })
+        .from(stars)
+        .where(eq(stars.promptId, promptId));
+
+      let isStarred = false;
+      if (userId) {
+        const [userStar] = await db
+          .select()
+          .from(stars)
+          .where(
+            and(
+              eq(stars.promptId, promptId),
+              eq(stars.userId, userId)
+            )
+          )
+          .limit(1);
+        isStarred = !!userStar;
+      }
+
+      res.json({ count: count || 0, isStarred });
+    } catch (error: any) {
+      console.error('Get stars error:', error);
+      res.status(500).json({ 
+        error: "Failed to get star count",
+        message: error.message,
+        count: 0,
+        isStarred: false 
+      });
+    }
+  });
+
+  // Create/fork a prompt
+  app.post("/api/prompts/:id/fork", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const promptId = parseInt(req.params.id);
+    const userId = req.user!.id;
+
+    try {
+      if (isNaN(promptId)) {
+        return res.status(400).json({ error: "Invalid prompt ID" });
+      }
+
+      const [originalPrompt] = await db
+        .select()
+        .from(prompts)
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!originalPrompt) {
+        return res.status(404).json({ error: "Prompt not found" });
+      }
+
+      // Handle tags safely - ensure it's always a valid array
+      const tags = Array.isArray(originalPrompt.tags) ? originalPrompt.tags : [];
+
+      // Create new prompt as fork with properly handled tags
+      const [forkedPrompt] = await db
+        .insert(prompts)
+        .values({
+          title: `Fork of ${originalPrompt.title}`,
+          content: originalPrompt.content,
+          description: originalPrompt.description,
+          tags: tags,
+          category: originalPrompt.category,
+          userId: userId,
+          version: originalPrompt.version || "1.0.0"
+        })
+        .returning();
+
+      // Record fork relationship
+      await db
+        .insert(forks)
+        .values({
+          originalPromptId: promptId,
+          forkedPromptId: forkedPrompt.id,
+          userId: userId,
+        });
+
+      res.json(forkedPrompt);
+    } catch (error: any) {
+      console.error("Fork error:", error);
+      res.status(500).json({ 
+        error: "Failed to fork prompt",
+        message: error.message
+      });
+    }
+  });
+
+  // Add or remove star
+  app.post("/api/prompts/:id/star", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const promptId = parseInt(req.params.id);
+    const userId = req.user!.id;
+
+    try {
+      if (isNaN(promptId)) {
+        return res.status(400).json({ error: "Invalid prompt ID" });
+      }
+
+      // Check if prompt exists
+      const [promptExists] = await db
+        .select({ id: prompts.id })
+        .from(prompts)
+        .where(eq(prompts.id, promptId))
+        .limit(1);
+
+      if (!promptExists) {
+        return res.status(404).json({ error: "Prompt not found" });
+      }
+
+      // Check if user has already starred
+      const [existingStar] = await db
+        .select()
+        .from(stars)
+        .where(
+          and(
+            eq(stars.promptId, promptId),
+            eq(stars.userId, userId)
+          )
+        )
+        .limit(1);
+
+      if (existingStar) {
+        // Remove star if already starred
+        await db
+          .delete(stars)
+          .where(
+            and(
+              eq(stars.promptId, promptId),
+              eq(stars.userId, userId)
+            )
+          );
+
+        // Get updated count
+        const [{ count }] = await db
+          .select({
+            count: sql<number>`count(*)::int`
+          })
+          .from(stars)
+          .where(eq(stars.promptId, promptId));
+
+        return res.json({ starred: false, count: count || 0 });
+      }
+
+      // Add star if not already starred
+      await db.insert(stars).values({ promptId, userId });
+      
+      // Get updated count
+      const [{ count }] = await db
+        .select({
+          count: sql<number>`count(*)::int`
+        })
+        .from(stars)
+        .where(eq(stars.promptId, promptId));
+
+      return res.json({ starred: true, count: count || 0 });
+    } catch (error: any) {
+      console.error('Star error:', error);
+      res.status(500).json({ 
+        error: "Failed to update star",
+        message: error.message
+      });
+    }
+  });
+
   // Add endpoint to get star count and user's star status
   app.get("/api/prompts/:id/stars", async (req, res) => {
     const promptId = parseInt(req.params.id);
