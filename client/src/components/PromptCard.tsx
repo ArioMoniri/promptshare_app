@@ -134,13 +134,16 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
 
   const fetchComments = async () => {
     try {
-      const response = await fetch(`/api/prompts/${prompt.id}/comments`);
+      const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
+        credentials: 'include'  // Add this line
+      });
       if (!response.ok) {
         throw new Error(await response.text());
       }
       const data = await response.json();
       setComments(data);
     } catch (error: any) {
+      console.error('Failed to fetch comments:', error);
       toast({
         variant: "destructive",
         title: "Error",

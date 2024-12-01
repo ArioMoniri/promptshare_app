@@ -254,11 +254,16 @@ export function registerRoutes(app: Express) {
         })
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
-        .where(eq(comments.promptId, promptId));
+        .where(eq(comments.promptId, promptId))
+        .orderBy(desc(comments.createdAt));
 
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch comments" });
+      console.error('Failed to fetch comments:', error);
+      res.status(500).json({ 
+        error: "Failed to fetch comments",
+        message: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   });
 
@@ -391,22 +396,24 @@ export function registerRoutes(app: Express) {
       const [originalPrompt] = await db
         .select()
         .from(prompts)
-        .where(eq(prompts.id, promptId));
+        .where(eq(prompts.id, promptId))
+        .limit(1);
 
       if (!originalPrompt) {
         return res.status(404).send("Prompt not found");
       }
 
-      // Create new prompt as fork
+      // Create new prompt as fork with proper array handling
       const [forkedPrompt] = await db
         .insert(prompts)
         .values({
           title: `Fork of ${originalPrompt.title}`,
           content: originalPrompt.content,
           description: originalPrompt.description,
-          tags: originalPrompt.tags,
+          tags: originalPrompt.tags || [], // Ensure tags is an array
           category: originalPrompt.category,
           userId: userId,
+          version: originalPrompt.version || "1.0.0"
         })
         .returning();
 
@@ -422,7 +429,10 @@ export function registerRoutes(app: Express) {
       res.json(forkedPrompt);
     } catch (error: any) {
       console.error("Fork error:", error);
-      res.status(500).send("Failed to fork prompt");
+      res.status(500).json({ 
+        error: "Failed to fork prompt",
+        message: error.message
+      });
     }
   });
   app.post("/api/prompts/:id/star", async (req, res) => {
