@@ -376,66 +376,68 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         </div>
         <p className="text-sm text-muted-foreground">Version: {prompt.version}</p>
       </CardContent>
-      <CardFooter className={cn("flex flex-wrap items-center gap-2", compact && "p-0 pt-4")}>
-        {/* Upvote */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleVote(1)}>
-          <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
-          {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
-        </Button>
-        
-        {/* Downvote */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleVote(-1)}>
-          <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
-          {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
-        </Button>
-        
-        {/* Comment */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowComments(true)}>
-          <MessageSquare className="h-4 w-4" />
-          {comments.length}
-        </Button>
-        
-        {/* Issue */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowIssues(true)}>
-          <AlertTriangle className="h-4 w-4" />
-          Issues
-        </Button>
-        
-        {/* Fork */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={handleFork}>
-          <GitFork className="h-4 w-4" />
-          {forkCount}
-        </Button>
-        
-        {/* Star */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={handleStar}>
-          <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
-          {starCount}
-        </Button>
-        
-        {/* Share */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={handleShare}>
-          <Share2 className="h-4 w-4" />
-          Share
-        </Button>
-        
-        {!compact && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setShowTest(true)}
-          >
-            <Bot className="h-4 w-4" />
-            Test
+      <CardFooter className={cn("flex flex-wrap items-center gap-2 justify-start max-w-full", compact && "p-0 pt-4")}>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Upvote */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => handleVote(1)}>
+            <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
+            {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
           </Button>
-        )}
-        
-        {/* View */}
-        <Button variant="ghost" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
-          <Eye className="h-4 w-4" />
-          View
-        </Button>
+          
+          {/* Downvote */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => handleVote(-1)}>
+            <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
+            {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
+          </Button>
+          
+          {/* Comment */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setShowComments(true)}>
+            <MessageSquare className="h-4 w-4" />
+            {comments.length}
+          </Button>
+          
+          {/* Issue */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setShowIssues(true)}>
+            <AlertTriangle className="h-4 w-4" />
+            Issues
+          </Button>
+          
+          {/* Fork */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleFork}>
+            <GitFork className="h-4 w-4" />
+            {forkCount}
+          </Button>
+          
+          {/* Star */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleStar}>
+            <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
+            {starCount}
+          </Button>
+          
+          {/* Share */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={handleShare}>
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
+          
+          {!compact && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 px-2"
+              onClick={() => setShowTest(true)}
+            >
+              <Bot className="h-4 w-4" />
+              Test
+            </Button>
+          )}
+          
+          {/* View */}
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
+            <Eye className="h-4 w-4" />
+            View
+          </Button>
+        </div>
       </CardFooter>
 
       {/* Issues Dialog */}

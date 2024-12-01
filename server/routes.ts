@@ -434,45 +434,88 @@ export function registerRoutes(app: Express) {
     const userId = req.user!.id;
 
     try {
-      const [promptExists] = await db
-        .select({ id: prompts.id })
-        .from(prompts)
-        .where(eq(prompts.id, promptId))
-        .limit(1);
-
-      if (!promptExists) {
-        return res.status(404).send("Prompt not found");
-      }
-
-      const existing = await db
+      const [existingVote] = await db
         .select()
         .from(stars)
-        .where(and(
-          eq(stars.promptId, promptId),
-          eq(stars.userId, userId)
-        ))
+        .where(
+          sql`${stars.promptId} = ${promptId} AND ${stars.userId} = ${userId}`
+        )
         .limit(1);
 
-      if (existing.length) {
+      if (existingVote) {
         // Remove star if already starred
         await db
           .delete(stars)
-          .where(and(
-            eq(stars.promptId, promptId),
-            eq(stars.userId, userId)
-          ));
+          .where(
+            sql`${stars.promptId} = ${promptId} AND ${stars.userId} = ${userId}`
+          );
         return res.json({ starred: false });
       }
 
       // Add star if not already starred
       await db.insert(stars).values({ promptId, userId });
       return res.json({ starred: true });
-    } catch (error: any) {
+    } catch (error) {
       console.error('Star error:', error);
-      res.status(500).json({ 
-        error: "Failed to update star",
-        message: error.message 
-      });
+      res.status(500).json({ error: "Failed to update star" });
+    }
+  });
+
+  // Issues endpoints
+  app.post("/api/prompts/:id/issues", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    const promptId = parseInt(req.params.id);
+    const userId = req.user!.id;
+    const { title, description } = req.body;
+
+    try {
+      const [issue] = await db
+        .insert(issues)
+        .values({
+          title,
+          description,
+          promptId,
+          userId,
+          status: 'open'
+        })
+        .returning();
+
+      res.json(issue);
+    } catch (error) {
+      console.error('Create issue error:', error);
+      res.status(500).json({ error: "Failed to create issue" });
+    }
+  });
+
+  app.get("/api/prompts/:id/issues", async (req, res) => {
+    const promptId = parseInt(req.params.id);
+
+    try {
+      const promptIssues = await db
+        .select({
+          id: issues.id,
+          title: issues.title,
+          description: issues.description,
+          status: issues.status,
+          createdAt: issues.createdAt,
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
+        })
+        .from(issues)
+        .leftJoin(users, eq(issues.userId, users.id))
+        .where(eq(issues.promptId, promptId))
+        .orderBy(desc(issues.createdAt));
+
+      res.json(promptIssues);
+    } catch (error) {
+      console.error('Fetch issues error:', error);
+      res.status(500).json({ error: "Failed to fetch issues" });
     }
   });
 }

@@ -5,6 +5,8 @@ import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import TrendingPage from './pages/TrendingPage'
 import UserProfile from './components/UserProfile'
+import PromptDetail from './pages/PromptDetail'
+import IssuesPage from './pages/IssuesPage'
 import { ThemeProvider } from "@/components/ui/theme-provider"
 
 export default function App() {
