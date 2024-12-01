@@ -310,7 +310,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   };
 
   return (
-    <Card className={cn("w-full hover:shadow-lg transition-shadow", compact && "p-4")}>
+    <Card className={cn("w-full max-w-3xl hover:shadow-lg transition-shadow mx-auto", compact && "p-4")}>
       <CardHeader className={cn(compact && "p-0 pb-4")}>
         <div className="flex items-center space-x-4">
           {prompt.user?.id ? (
@@ -376,8 +376,8 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         </div>
         <p className="text-sm text-muted-foreground">Version: {prompt.version}</p>
       </CardContent>
-      <CardFooter className={cn("flex flex-wrap items-center gap-2 justify-start max-w-full", compact && "p-0 pt-4")}>
-        <div className="flex flex-wrap items-center gap-2">
+      <CardFooter className="flex items-center gap-2 overflow-x-auto py-2">
+        <div className="flex items-center gap-2 min-w-0">
           {/* Upvote */}
           <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => handleVote(1)}>
             <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
@@ -397,7 +397,7 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           </Button>
           
           {/* Issue */}
-          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => setShowIssues(true)}>
+          <Button variant="ghost" size="sm" className="h-8 px-2" onClick={() => navigate(`/prompts/${prompt.id}/issues`)}>
             <AlertTriangle className="h-4 w-4" />
             Issues
           </Button>

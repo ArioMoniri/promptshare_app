@@ -20,6 +20,7 @@ export default function App() {
           <Route path="/trending" component={TrendingPage} />
           <Route path="/profile/:id" component={UserProfile} />
           <Route path="/prompts/:id" component={PromptDetail} />
+          <Route path="/prompts/:id/issues" component={IssuesPage} />
         </Switch>
       </main>
       <Toaster />
