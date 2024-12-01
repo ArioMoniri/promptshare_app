@@ -265,7 +265,18 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
           <div className="flex-grow">
             <CardTitle className={cn("text-lg", compact && "text-base")}>{prompt.title}</CardTitle>
             <p className="text-sm text-muted-foreground">
-              by {prompt.user?.username || 'Anonymous'}
+              by{' '}
+              {prompt.user ? (
+                <Link 
+                  href={`/profile/${prompt.user.id}`}
+                  className="hover:text-primary hover:underline transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {prompt.user.username}
+                </Link>
+              ) : (
+                'Anonymous'
+              )}
             </p>
           </div>
           <Button variant="ghost" size="icon" onClick={handleCopy}>

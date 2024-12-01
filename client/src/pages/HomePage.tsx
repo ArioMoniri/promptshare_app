@@ -68,14 +68,9 @@ export default function HomePage() {
   return (
     <div className="space-y-8">
       <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold">Welcome to PromptShare</h1>
-          <Button asChild>
-            <Link href={user ? `/profile/${user.id}` : '/auth'}>
-              {user ? 'View Profile' : 'Sign In'}
-            </Link>
-          </Button>
-        </div>
+        <div className="flex items-center">
+            <h1 className="text-3xl font-bold">Welcome to PromptShare</h1>
+          </div>
         
         {user && (
           <Button onClick={() => setShowEditor(true)} className="w-full gap-2">
