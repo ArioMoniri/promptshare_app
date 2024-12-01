@@ -7,18 +7,24 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PlusCircle, TrendingUp, Clock, Search } from "lucide-react";
+import { PlusCircle, TrendingUp, Clock, Search, MessagesSquare } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function HomePage() {
   const { user } = useUser();
   const [showEditor, setShowEditor] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState<'trending' | 'recent'>('trending');
+  const [activeTab, setActiveTab] = useState<'trending' | 'recent' | 'controversial'>('trending');
 
   const { prompts, isLoading, error } = usePrompts({
-    sort: activeTab === 'trending' ? 'popular' : 'recent',
+    sort: activeTab,
     search: searchQuery
   });
 
@@ -89,17 +95,46 @@ export default function HomePage() {
         </div>
       </div>
 
-      <Tabs defaultValue="trending" className="space-y-4" onValueChange={(value) => setActiveTab(value as 'trending' | 'recent')}>
-        <TabsList>
-          <TabsTrigger value="trending" className="gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Trending
-          </TabsTrigger>
-          <TabsTrigger value="recent" className="gap-2">
-            <Clock className="h-4 w-4" />
-            Recent
-          </TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="trending" className="space-y-4" onValueChange={(value) => setActiveTab(value as 'trending' | 'recent' | 'controversial')}>
+        <TooltipProvider>
+          <TabsList>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="trending" className="gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Most Upvoted
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Most upvoted prompts</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="recent" className="gap-2">
+                  <Clock className="h-4 w-4" />
+                  Latest
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Latest published prompts</p>
+              </TooltipContent>
+            </Tooltip>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <TabsTrigger value="controversial" className="gap-2">
+                  <MessagesSquare className="h-4 w-4" />
+                  Controversial
+                </TabsTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Active discussions with mixed reactions</p>
+              </TooltipContent>
+            </Tooltip>
+          </TabsList>
+        </TooltipProvider>
 
         {searchQuery && (
           <div className="space-y-4">
@@ -156,6 +191,14 @@ export default function HomePage() {
             </TabsContent>
 
             <TabsContent value="recent">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(filteredResults.prompts ?? []).map((prompt) => (
+                  <PromptCard key={prompt.id} prompt={prompt} />
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="controversial">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {(filteredResults.prompts ?? []).map((prompt) => (
                   <PromptCard key={prompt.id} prompt={prompt} />

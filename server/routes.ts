@@ -48,8 +48,8 @@ export function registerRoutes(app: Express) {
       const finalQuery = sort === 'popular'
         ? query.orderBy(desc(prompts.upvotes))
         : sort === 'controversial'
-        ? query.orderBy(desc(sql`${prompts.upvotes} + ${prompts.downvotes}`))
-        : query.orderBy(desc(prompts.createdAt));
+        ? query.orderBy(desc(sql`(${prompts.upvotes} + ${prompts.downvotes}) * CASE WHEN ${prompts.downvotes} > 0 THEN 1.0 * ${prompts.downvotes} / ${prompts.upvotes} ELSE 0 END`))
+        : query.orderBy(desc(prompts.createdAt)); // 'recent' - show most recently published
 
       const allPrompts = await query;
       res.json(allPrompts);
