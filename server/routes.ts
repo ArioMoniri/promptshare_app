@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { prompts, votes, users, comments, stars, forks, issues } from "@db/schema";
+const originalPrompts = prompts;
 import { eq, sql, desc, and } from "drizzle-orm";
 import { testPrompt } from "./openai";
 
@@ -357,6 +358,120 @@ export function registerRoutes(app: Express) {
       res.json(user);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch user profile" });
+    }
+  });
+
+  // Get user's prompts
+  app.get("/api/users/:id/prompts", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+      const userPrompts = await db
+        .select()
+        .from(prompts)
+        .where(eq(prompts.userId, userId))
+        .orderBy(desc(prompts.createdAt));
+      res.json(userPrompts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user prompts" });
+    }
+  });
+
+  // Get user's starred prompts
+  app.get("/api/users/:id/starred", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+      const starredPrompts = await db
+        .select({
+          prompt: {
+            id: prompts.id,
+            title: prompts.title,
+            content: prompts.content,
+            description: prompts.description,
+            createdAt: prompts.createdAt,
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
+          }
+        })
+        .from(stars)
+        .where(eq(stars.userId, userId))
+        .innerJoin(prompts, eq(stars.promptId, prompts.id))
+        .leftJoin(users, eq(prompts.userId, users.id))
+        .orderBy(desc(stars.createdAt));
+      res.json(starredPrompts);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch starred prompts" });
+    }
+  });
+
+  // Get user's forks
+  app.get("/api/users/:id/forks", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+      const userForks = await db
+        .select({
+          fork: {
+            id: prompts.id,
+            title: prompts.title,
+            content: prompts.content,
+            description: prompts.description,
+            createdAt: prompts.createdAt
+          },
+          original: {
+            id: originalPrompts.id,
+            title: originalPrompts.title,
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
+          }
+        })
+        .from(forks)
+        .where(eq(forks.userId, userId))
+        .innerJoin(prompts, eq(forks.forkedPromptId, prompts.id))
+        .innerJoin(prompts as typeof originalPrompts, eq(forks.originalPromptId, originalPrompts.id))
+        .leftJoin(users, eq(originalPrompts.userId, users.id))
+        .orderBy(desc(forks.createdAt));
+      res.json(userForks);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user forks" });
+    }
+  });
+
+  // Get user's issues
+  app.get("/api/users/:id/issues", async (req, res) => {
+    const userId = parseInt(req.params.id);
+    try {
+      const userIssues = await db
+        .select({
+          issue: {
+            id: issues.id,
+            title: issues.title,
+            description: issues.description,
+            status: issues.status,
+            createdAt: issues.createdAt
+          },
+          prompt: {
+            id: prompts.id,
+            title: prompts.title,
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
+          }
+        })
+        .from(issues)
+        .where(eq(issues.userId, userId))
+        .innerJoin(prompts, eq(issues.promptId, prompts.id))
+        .leftJoin(users, eq(prompts.userId, users.id))
+        .orderBy(desc(issues.createdAt));
+      res.json(userIssues);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch user issues" });
     }
   });
 

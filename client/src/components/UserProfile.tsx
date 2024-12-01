@@ -39,59 +39,75 @@ export default function UserProfile() {
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        // Parse ID to ensure it's numeric
-        const userId = parseInt(id || '', 10);
-        if (isNaN(userId)) {
-          throw new Error('Invalid user ID');
-        }
-
-        const response = await fetch(`/api/users/${userId}`, {
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (response.status === 404) {
-          throw new Error('User not found');
-        }
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || `Failed to fetch user profile (${response.status})`);
-        }
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          throw new Error('Invalid response format');
-        }
-
-        const data = await response.json();
-        if (!data || typeof data.id !== 'number') {
-          throw new Error('Invalid user data received');
-        }
-
-        setProfileUser(data);
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Failed to fetch user profile",
-        });
-        setProfileUser(null);
+  const userId = id || currentUser?.id;
+  
+  const { data: userProfile } = useQuery({
+    queryKey: ['user', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user profile');
       }
-    };
+      return response.json();
+    },
+    enabled: !!userId
+  });
 
-    if (id) {
-      fetchUserProfile();
+  const { data: userPrompts = [] } = useQuery({
+    queryKey: ['userPrompts', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/prompts`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user prompts');
+      }
+      return response.json();
+    },
+    enabled: !!userId
+  });
+
+  const { data: starredPrompts = [] } = useQuery({
+    queryKey: ['starredPrompts', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/starred`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch starred prompts');
+      }
+      return response.json();
+    },
+    enabled: !!userId
+  });
+
+  const { data: userForks = [] } = useQuery({
+    queryKey: ['userForks', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/forks`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user forks');
+      }
+      return response.json();
+    },
+    enabled: !!userId
+  });
+
+  const { data: userIssues = [] } = useQuery({
+    queryKey: ['userIssues', userId],
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${userId}/issues`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch user issues');
+      }
+      return response.json();
+    },
+    enabled: !!userId
+  });
+
+  useEffect(() => {
+    if (userProfile) {
+      setProfileUser(userProfile);
     } else if (currentUser) {
       setProfileUser(currentUser);
     }
-  }, [id, currentUser, toast]);
-
-  const userPrompts = prompts?.filter(p => p.userId === (profileUser?.id ?? currentUser?.id)) || [];
+  }, [userProfile, currentUser]);
   const isOwnProfile = profileUser?.id === currentUser?.id;
 
   const handleSaveApiKey = async () => {
@@ -396,14 +412,74 @@ export default function UserProfile() {
       </Card>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">
-          {isOwnProfile ? "Your Prompts" : `${displayUser?.username}'s Prompts`}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {userPrompts.map((prompt) => (
-            <PromptCard key={prompt.id} prompt={prompt} />
-          ))}
-        </div>
+        <Tabs defaultValue="prompts">
+          <TabsList>
+            <TabsTrigger value="prompts">My Prompts</TabsTrigger>
+            <TabsTrigger value="starred">Starred</TabsTrigger>
+            <TabsTrigger value="forks">Forks</TabsTrigger>
+            <TabsTrigger value="issues">Issues</TabsTrigger>
+            <TabsTrigger value="pull-requests">Pull Requests</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="prompts">
+            <div className="space-y-4">
+              {userPrompts.map(prompt => (
+                <PromptCard key={prompt.id} prompt={prompt} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="starred">
+            <div className="space-y-4">
+              {starredPrompts.map(({ prompt }) => (
+                <PromptCard key={prompt.id} prompt={prompt} />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="forks">
+            <div className="space-y-4">
+              {userForks.map(({ fork, original }) => (
+                <Card key={fork.id}>
+                  <CardHeader>
+                    <CardTitle>{fork.title}</CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      Forked from {original.title} by {original.user.username}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p>{fork.description}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="issues">
+            <div className="space-y-4">
+              {userIssues.map(({ issue, prompt }) => (
+                <Card key={issue.id}>
+                  <CardHeader>
+                    <CardTitle>{issue.title}</CardTitle>
+                    <div className="text-sm text-muted-foreground">
+                      On {prompt.title} by {prompt.user.username}
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p>{issue.description}</p>
+                    <Badge>{issue.status}</Badge>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="pull-requests">
+            <div className="text-center text-muted-foreground py-8">
+              Pull requests feature coming soon
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Dialog open={isEditingApiKey} onOpenChange={setIsEditingApiKey}>
