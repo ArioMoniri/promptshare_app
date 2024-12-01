@@ -378,57 +378,50 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
       </CardContent>
       <CardFooter className={cn("flex justify-between flex-wrap gap-2", compact && "p-0 pt-4")}>
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => handleVote(1)}
-          >
+          {/* Upvote */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleVote(1)}>
             <ThumbsUp className={`h-4 w-4 ${hasVoted === 1 ? "fill-current" : ""}`} />
             {optimisticUpvotes > 0 ? optimisticUpvotes : ''}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => handleVote(-1)}
-          >
+          
+          {/* Downvote */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => handleVote(-1)}>
             <ThumbsDown className={`h-4 w-4 ${hasVoted === -1 ? "fill-current" : ""}`} />
             {optimisticDownvotes > 0 ? optimisticDownvotes : ''}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleStar}
-          >
-            <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
-            {starCount}
+          
+          {/* Comment */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowComments(true)}>
+            <MessageSquare className="h-4 w-4" />
+            {comments.length}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleFork}
-          >
-            <GitFork className="h-4 w-4" />
-            {forkCount}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setShowIssues(true)}
-          >
+          
+          {/* Issue */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={() => setShowIssues(true)}>
             <AlertTriangle className="h-4 w-4" />
             Issues
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="gap-2"
-            onClick={() => navigate(`/prompts/${prompt.id}`)}
-          >
+          
+          {/* Fork */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={handleFork}>
+            <GitFork className="h-4 w-4" />
+            {forkCount}
+          </Button>
+          
+          {/* Star */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={handleStar}>
+            <Star className={`h-4 w-4 ${isStarred ? "fill-yellow-400" : ""}`} />
+            {starCount}
+          </Button>
+          
+          {/* Share */}
+          <Button variant="ghost" size="sm" className="gap-2" onClick={handleShare}>
+            <Share2 className="h-4 w-4" />
+            Share
+          </Button>
+          
+          {/* View Details */}
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate(`/prompts/${prompt.id}`)}>
             <Eye className="h-4 w-4" />
             View Details
           </Button>
