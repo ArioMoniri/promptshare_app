@@ -438,7 +438,10 @@ export function registerRoutes(app: Express) {
         .select()
         .from(stars)
         .where(
-          sql`${stars.promptId} = ${promptId} AND ${stars.userId} = ${userId}`
+          and(
+            eq(stars.promptId, promptId),
+            eq(stars.userId, userId)
+          )
         )
         .limit(1);
 
@@ -447,7 +450,10 @@ export function registerRoutes(app: Express) {
         await db
           .delete(stars)
           .where(
-            sql`${stars.promptId} = ${promptId} AND ${stars.userId} = ${userId}`
+            and(
+              eq(stars.promptId, promptId),
+              eq(stars.userId, userId)
+            )
           );
         return res.json({ starred: false });
       }
@@ -455,9 +461,20 @@ export function registerRoutes(app: Express) {
       // Add star if not already starred
       await db.insert(stars).values({ promptId, userId });
       return res.json({ starred: true });
-    } catch (error) {
+    } catch (error: any) {
+      // Check if error is due to unique constraint violation
+      if (error.code === '23505') { // PostgreSQL unique violation code
+        return res.status(400).json({ 
+          error: "Already starred",
+          message: "You have already starred this prompt"
+        });
+      }
+      
       console.error('Star error:', error);
-      res.status(500).json({ error: "Failed to update star" });
+      res.status(500).json({ 
+        error: "Failed to update star",
+        message: error.message 
+      });
     }
   });
 
