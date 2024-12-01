@@ -1,28 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 export default function IssuesPage() {
   const { id } = useParams();
-  const [issues, setIssues] = useState<Array<{
-    id: number;
-    title: string;
-    description: string | null;
-    status: string;
-    createdAt: string;
-    user: {
-      id: number;
-      username: string;
-      avatar: string | null;
-    } | null;
-  }>>([]);
+  const [issues, setIssues] = useState([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const { toast } = useToast();
@@ -45,7 +32,7 @@ export default function IssuesPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const response = await fetch(`/api/prompts/${id}/issues`, {
@@ -76,31 +63,22 @@ export default function IssuesPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Report Issue</CardTitle>
-          <CardDescription>
-            Report bugs, suggest improvements, or request features
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
               <Input
-                id="title"
-                placeholder="Brief description of the issue"
+                placeholder="Issue title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
               />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
               <Textarea
-                id="description"
-                placeholder="Detailed explanation of the issue"
+                placeholder="Issue description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 required
@@ -112,33 +90,17 @@ export default function IssuesPage() {
       </Card>
 
       <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Existing Issues</h2>
-        {issues.length === 0 ? (
-          <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              No issues reported yet
+        {issues.map((issue) => (
+          <Card key={issue.id}>
+            <CardHeader>
+              <CardTitle>{issue.title}</CardTitle>
+              <Badge>{issue.status}</Badge>
+            </CardHeader>
+            <CardContent>
+              <p>{issue.description}</p>
             </CardContent>
           </Card>
-        ) : (
-          issues.map((issue) => (
-            <Card key={issue.id}>
-              <CardHeader>
-                <CardTitle>{issue.title}</CardTitle>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Badge variant={issue.status === 'open' ? 'destructive' : 'secondary'}>
-                    {issue.status}
-                  </Badge>
-                  <span>by {issue.user?.username}</span>
-                  <span>•</span>
-                  <span>{formatDistanceToNow(new Date(issue.createdAt), { addSuffix: true })}</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="whitespace-pre-wrap">{issue.description}</p>
-              </CardContent>
-            </Card>
-          ))
-        )}
+        ))}
       </div>
     </div>
   );

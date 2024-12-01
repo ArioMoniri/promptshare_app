@@ -86,16 +86,21 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [forkCount, setForkCount] = useState(0);
 
   useEffect(() => {
-    if (prompt.id) {
-      // Fetch initial star count and status
-      fetch(`/api/prompts/${prompt.id}/stars`)
-        .then(res => res.json())
-        .then(data => {
-          setLocalStarCount(data.count);
-          setIsStarred(data.isStarred);
-        })
-        .catch(console.error);
-    }
+    // Fetch star count periodically
+    const fetchStarCount = async () => {
+      try {
+        const response = await fetch(`/api/prompts/${prompt.id}/stars`);
+        const data = await response.json();
+        setLocalStarCount(data.count);
+        setIsStarred(data.isStarred);
+      } catch (error) {
+        console.error('Failed to fetch star count:', error);
+      }
+    };
+
+    fetchStarCount();
+    const interval = setInterval(fetchStarCount, 5000); // Update every 5 seconds
+    return () => clearInterval(interval);
   }, [prompt.id]);
   const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();
@@ -133,22 +138,18 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   }, [prompt.id]);
 
   const fetchComments = async () => {
+    if (!prompt.id) return;
+    
     try {
-      const response = await fetch(`/api/prompts/${prompt.id}/comments`, {
-        credentials: 'include'  // Add this line
-      });
+      const response = await fetch(`/api/prompts/${prompt.id}/comments`);
       if (!response.ok) {
         throw new Error(await response.text());
       }
       const data = await response.json();
-      setComments(data);
-    } catch (error: any) {
+      setComments(data || []);
+    } catch (error) {
       console.error('Failed to fetch comments:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to fetch comments",
-      });
+      setComments([]); // Set empty array instead of showing error
     }
   };
 
