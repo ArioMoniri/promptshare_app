@@ -518,14 +518,17 @@ export function registerRoutes(app: Express) {
         return res.status(404).send("Prompt not found");
       }
 
-      // Create new prompt as fork with proper array handling
+      // Ensure tags is an array before insertion
+      const tags = Array.isArray(originalPrompt.tags) ? originalPrompt.tags : [];
+
+      // Create new prompt as fork
       const [forkedPrompt] = await db
         .insert(prompts)
         .values({
           title: `Fork of ${originalPrompt.title}`,
           content: originalPrompt.content,
           description: originalPrompt.description,
-          tags: originalPrompt.tags || [], // Ensure tags is an array
+          tags: tags,
           category: originalPrompt.category,
           userId: userId,
           version: originalPrompt.version || "1.0.0"
