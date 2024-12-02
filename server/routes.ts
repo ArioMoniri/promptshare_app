@@ -25,11 +25,7 @@ type PromptWithUser = {
   createdAt: Date;
   updatedAt: Date;
   userId: number | null;
-  user: {
-    id: SQL<number>;
-    username: SQL<string>;
-    avatar: SQL<string | null>;
-  };
+  user: UserSelect | null;
 };
 
 export function registerRoutes(app: Express) {
@@ -54,11 +50,11 @@ export function registerRoutes(app: Express) {
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
           userId: prompts.userId,
-          user: sql<UserSelect>`json_build_object(
-            'id', ${users.id},
-            'username', ${users.username},
-            'avatar', ${users.avatar}
-          )`
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id));
@@ -122,11 +118,11 @@ export function registerRoutes(app: Express) {
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
           userId: prompts.userId,
-          user: sql<UserSelect>`json_build_object(
-            'id', ${users.id},
-            'username', ${users.username},
-            'avatar', ${users.avatar}
-          )`
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id))
@@ -151,30 +147,6 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      // Parse tags properly
-      const tags = Array.isArray(req.body.tags) ? req.body.tags : [];
-      
-      // Log the request body with proper tags
-      console.log('Creating prompt with data:', {
-        ...req.body,
-        content: req.body.content?.substring(0, 50) + '...',
-        tags // Show parsed tags
-      });
-
-      // Validate required fields
-      if (!req.body.title || !req.body.content) {
-        return res.status(400).json({ 
-          error: "Title and content are required",
-          details: {
-            title: !req.body.title ? "Title is required" : null,
-            content: !req.body.content ? "Content is required" : null
-          }
-        });
-      }
-
-      // Ensure version is handled as string
-      const version = String(req.body.version || "1.0.0");
-
       const [prompt] = await db
         .insert(prompts)
         .values({
@@ -182,21 +154,14 @@ export function registerRoutes(app: Express) {
           content: req.body.content,
           description: req.body.description,
           category: req.body.category,
-          version: sql`${version}::text`, // Explicitly cast version to text
-          tags: sql`array[${sql.join(tags)}]::text[]`,
+          version: req.body.version || "1.0.0",
+          tags: req.body.tags || [],
           userId: req.user!.id,
         })
         .returning();
-
-      console.log('Successfully created prompt:', prompt.id);
       res.json(prompt);
-    } catch (error: any) {
-      console.error('Failed to create prompt:', error);
-      res.status(500).json({ 
-        error: "Failed to create prompt",
-        message: error.message,
-        details: error.detail || error.toString()
-      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create prompt" });
     }
   });
 
@@ -308,11 +273,11 @@ export function registerRoutes(app: Express) {
           id: comments.id,
           content: comments.content,
           createdAt: comments.createdAt,
-          user: sql<UserSelect>`json_build_object(
-            'id', ${users.id},
-            'username', ${users.username},
-            'avatar', ${users.avatar}
-          )`
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
         })
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
@@ -360,11 +325,11 @@ export function registerRoutes(app: Express) {
           id: comments.id,
           content: comments.content,
           createdAt: comments.createdAt,
-          user: sql<UserSelect>`json_build_object(
-            'id', ${users.id},
-            'username', ${users.username},
-            'avatar', ${users.avatar}
-          )`
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
         })
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
@@ -382,59 +347,28 @@ export function registerRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
+    if (!req.user.apiKey) {
+      return res.status(400).json({ error: "Please add your OpenAI API key in your profile settings" });
+    }
+
     try {
-      const { prompt, input } = req.body;
+      const { messages } = req.body;
       
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt is required" });
+      if (!Array.isArray(messages) || messages.length < 1) {
+        return res.status(400).json({ error: "Invalid messages format" });
       }
 
-      const result = await testPrompt(prompt, input || "");
+      const completion = await testPrompt(messages, req.user.apiKey);
+      const response = completion.choices[0].message;
 
-      res.json(result);
+      res.json({
+        content: response.content,
+        usage: completion.usage
+      });
     } catch (error: any) {
       console.error('OpenAI API error:', error);
       res.status(500).json({ 
         error: "Failed to test prompt",
-        message: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  });
-
-  // Analyze prompt endpoint
-  app.post("/api/analyze-prompt", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const { prompt } = req.body;
-      
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt is required" });
-      }
-
-      const response = await openai.chat.completions.create({
-        messages: [
-          {
-            role: "system",
-            content: "You are a prompt engineering expert. Analyze the given prompt and provide feedback on its effectiveness, suggestions for improvement, and tone analysis. Respond with JSON in this format: { 'effectiveness': number from 0 to 1, 'suggestions': array of strings, 'tone': string }"
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        model: "gpt-4o",
-        response_format: { type: "json_object" }
-      });
-
-      const analysis = JSON.parse(response.choices[0].message.content || "{}");
-      res.json(analysis);
-    } catch (error: any) {
-      console.error('OpenAI API error:', error);
-      res.status(500).json({ 
-        error: "Failed to analyze prompt",
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
@@ -489,11 +423,11 @@ export function registerRoutes(app: Express) {
             createdAt: prompts.createdAt,
             updatedAt: prompts.updatedAt,
             userId: prompts.userId,
-            user: sql<UserSelect>`json_build_object(
-              'id', ${users.id},
-              'username', ${users.username},
-              'avatar', ${users.avatar}
-            )`
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
           })
           .from(prompts)
           .leftJoin(users, eq(prompts.userId, users.id))
@@ -531,11 +465,11 @@ export function registerRoutes(app: Express) {
             content: prompts.content,
             description: prompts.description,
             createdAt: prompts.createdAt,
-            user: sql<UserSelect>`json_build_object(
-              'id', ${users.id},
-              'username', ${users.username},
-              'avatar', ${users.avatar}
-            )`
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
           }
         })
         .from(stars)
@@ -554,7 +488,10 @@ export function registerRoutes(app: Express) {
     try {
       const userId = parseInt(req.params.id);
       
-      const forkQuery = db
+      // Create alias for prompts table for original prompts
+      const originalPromptsTable = prompts;
+      
+      const forks = await db
         .select({
           fork: {
             id: prompts.id,
@@ -568,23 +505,22 @@ export function registerRoutes(app: Express) {
             userId: prompts.userId,
           },
           original: {
-            id: prompts.id,
-            title: prompts.title,
-            user: sql<UserSelect>`json_build_object(
-              'id', ${users.id},
-              'username', ${users.username},
-              'avatar', ${users.avatar}
-            )`
+            id: originalPromptsTable.id,
+            title: originalPromptsTable.title,
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
           }
         })
         .from(forks)
         .where(eq(forks.userId, userId))
         .leftJoin(prompts, eq(forks.forkedPromptId, prompts.id))
-        .leftJoin(prompts as typeof prompts, eq(forks.originalPromptId, prompts.id))
-        .leftJoin(users, eq(prompts.userId, users.id));
+        .leftJoin(originalPromptsTable, eq(forks.originalPromptId, originalPromptsTable.id))
+        .leftJoin(users, eq(originalPromptsTable.userId, users.id));
 
-      const userForks = await forkQuery;
-      res.json({ forks: userForks });
+      res.json({ forks });
     } catch (error) {
       console.error('Failed to fetch user forks:', error);
       res.status(500).json({ error: "Failed to fetch user forks" });
@@ -607,11 +543,11 @@ export function registerRoutes(app: Express) {
           prompt: {
             id: prompts.id,
             title: prompts.title,
-            user: sql<UserSelect>`json_build_object(
-              'id', ${users.id},
-              'username', ${users.username},
-              'avatar', ${users.avatar}
-            )`
+            user: {
+              id: users.id,
+              username: users.username,
+              avatar: users.avatar
+            }
           }
         })
         .from(issues)
@@ -947,11 +883,11 @@ export function registerRoutes(app: Express) {
           description: issues.description,
           status: issues.status,
           createdAt: issues.createdAt,
-          user: sql<UserSelect>`json_build_object(
-            'id', ${users.id},
-            'username', ${users.username},
-            'avatar', ${users.avatar}
-          )`
+          user: {
+            id: users.id,
+            username: users.username,
+            avatar: users.avatar
+          }
         })
         .from(issues)
         .leftJoin(users, eq(issues.userId, users.id))

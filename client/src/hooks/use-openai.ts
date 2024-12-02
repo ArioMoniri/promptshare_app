@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { useUser } from "./use-user";
-import { useToast } from "./use-toast";
+
+interface Message {
+  role: string;
+  content: string;
+}
 
 interface TestResponse {
-  output: string;
+  content: string;
   usage: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -13,18 +17,32 @@ interface TestResponse {
 
 export function useOpenAI() {
   const { user } = useUser();
-  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
-  const testPrompt = async (prompt: string, input: string = "") => {
+  const testPrompt = async (input: string) => {
+    if (!user?.apiKey) {
+      throw new Error('Please add your OpenAI API key in your profile settings');
+    }
+
     setIsLoading(true);
     try {
+      const messages: Message[] = [
+        {
+          role: "system",
+          content: "You are a helpful assistant."
+        },
+        {
+          role: "user",
+          content: input
+        }
+      ];
+
       const response = await fetch('/api/test-prompt', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ prompt, input }),
+        body: JSON.stringify({ messages }),
         credentials: 'include'
       });
 
@@ -35,50 +53,12 @@ export function useOpenAI() {
 
       const data: TestResponse = await response.json();
       return {
-        output: data.output,
-        usage: data.usage
+        output: data.content,
+        tokenUsage: data.usage
       };
     } catch (error) {
       console.error('Test prompt error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: `Failed to test prompt: ${errorMessage}`
-      });
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const analyzePrompt = async (prompt: string) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/analyze-prompt', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to analyze prompt');
-      }
-
-      return response.json();
-    } catch (error) {
-      console.error('Analyze prompt error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: `Failed to analyze prompt: ${errorMessage}`
-      });
-      throw error;
+      throw new Error('Failed to test prompt: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +66,6 @@ export function useOpenAI() {
 
   return {
     testPrompt,
-    analyzePrompt,
     isLoading,
   };
 }
