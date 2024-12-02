@@ -344,18 +344,33 @@ export function registerRoutes(app: Express) {
   // Test prompt endpoint
   app.post("/api/test-prompt", async (req, res) => {
     if (!req.isAuthenticated()) {
-      return res.status(401).send("Not authenticated");
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
     if (!req.user.apiKey) {
-      return res.status(400).send("Please add your OpenAI API key in your profile settings");
+      return res.status(400).json({ error: "Please add your OpenAI API key in your profile settings" });
     }
 
     try {
-      const result = await testPrompt(req.body.input, req.user.apiKey);
-      res.json(result);
+      const { messages } = req.body;
+      
+      if (!Array.isArray(messages) || messages.length < 1) {
+        return res.status(400).json({ error: "Invalid messages format" });
+      }
+
+      const completion = await testPrompt(messages, req.user.apiKey);
+      const response = completion.choices[0].message;
+
+      res.json({
+        content: response.content,
+        usage: completion.usage
+      });
     } catch (error: any) {
-      res.status(500).send(error.message);
+      console.error('OpenAI API error:', error);
+      res.status(500).json({ 
+        error: "Failed to test prompt",
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
