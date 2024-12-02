@@ -487,6 +487,10 @@ export function registerRoutes(app: Express) {
   app.get("/api/users/:id/forks", async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
+      
+      // Create alias for prompts table for original prompts
+      const originalPromptsTable = prompts;
+      
       const forks = await db
         .select({
           fork: {
@@ -501,8 +505,8 @@ export function registerRoutes(app: Express) {
             userId: prompts.userId,
           },
           original: {
-            id: originalPrompts.id,
-            title: originalPrompts.title,
+            id: originalPromptsTable.id,
+            title: originalPromptsTable.title,
             user: {
               id: users.id,
               username: users.username,
@@ -513,8 +517,8 @@ export function registerRoutes(app: Express) {
         .from(forks)
         .where(eq(forks.userId, userId))
         .leftJoin(prompts, eq(forks.forkedPromptId, prompts.id))
-        .leftJoin(prompts as typeof originalPrompts, eq(forks.originalPromptId, originalPrompts.id))
-        .leftJoin(users, eq(originalPrompts.userId, users.id));
+        .leftJoin(originalPromptsTable, eq(forks.originalPromptId, originalPromptsTable.id))
+        .leftJoin(users, eq(originalPromptsTable.userId, users.id));
 
       res.json({ forks });
     } catch (error) {
