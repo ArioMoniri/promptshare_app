@@ -182,8 +182,8 @@ export function registerRoutes(app: Express) {
           content: req.body.content,
           description: req.body.description,
           category: req.body.category,
-          version: version,  // Explicitly pass as string
-          tags: sql`array[${sql.join(tags)}]::text[]`, // Properly format tags as PostgreSQL array
+          version: sql`${version}::text`, // Explicitly cast version to text
+          tags: sql`array[${sql.join(tags)}]::text[]`,
           userId: req.user!.id,
         })
         .returning();
