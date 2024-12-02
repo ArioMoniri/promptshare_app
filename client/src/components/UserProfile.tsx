@@ -90,17 +90,26 @@ export default function UserProfile() {
     queryKey: ['userForks', userId, forksPage],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`);
+        const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
         if (!response.ok) {
-          throw new Error('Failed to fetch forks');
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to fetch forks');
         }
+        
         return response.json();
       } catch (error) {
         console.error('Failed to fetch forks:', error);
-        return { forks: [] };
+        throw error; // Let React Query handle the error
       }
     },
-    enabled: !!userId
+    enabled: !!userId,
+    retry: false
   });
 
   const { data: userIssues = [] } = useQuery({

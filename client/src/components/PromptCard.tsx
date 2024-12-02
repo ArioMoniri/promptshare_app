@@ -174,21 +174,32 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
             'Accept': 'application/json'
           }
         })
+    ]);
+
+    if (!starResponse.ok || !forkResponse.ok) {
+      const [starError, forkError] = await Promise.all([
+        starResponse.json().catch(() => ({})),
+        forkResponse.json().catch(() => ({}))
       ]);
+      throw new Error(starError.message || forkError.message || 'Failed to fetch counts');
+    }
 
-      if (!starResponse.ok || !forkResponse.ok) {
-        throw new Error('Failed to fetch counts');
-      }
+    const [starData, forkData] = await Promise.all([
+      starResponse.json(),
+      forkResponse.json()
+    ]);
 
-      const starData = await starResponse.json();
-      const forkData = await forkResponse.json();
-
-      setLocalStarCount(starData.count || 0);
-      setIsStarred(starData.isStarred || false);
-      setForkCount(forkData.count || 0);
-      setIsForked(forkData.isForked || false);
+    setLocalStarCount(starData.count || 0);
+    setIsStarred(starData.isStarred || false);
+    setForkCount(forkData.count || 0);
+    setIsForked(forkData.isForked || false);
     } catch (error) {
       console.error('Failed to fetch counts:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to fetch counts"
+      });
       // Set default values on error
       setLocalStarCount(0);
       setIsStarred(false);
