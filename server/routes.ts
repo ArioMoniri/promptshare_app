@@ -581,12 +581,10 @@ export function registerRoutes(app: Express) {
       }
 
       // Handle tags safely with improved array handling
-      const tags = originalPrompt.prompt.tags || [];
-      const sanitizedTags = Array.isArray(tags) 
-        ? tags 
-        : typeof tags === 'string'
-          ? JSON.parse(tags.replace(/'/g, '"'))
-          : [];
+      const promptTags = originalPrompt.prompt.tags || [];
+      const sanitizedTags = Array.isArray(promptTags) 
+        ? promptTags
+        : [];
 
       // Create fork within a transaction
       const result = await db.transaction(async (tx) => {
@@ -637,10 +635,7 @@ export function registerRoutes(app: Express) {
           originalPrompt: {
             id: originalPrompts.id,
             title: originalPrompts.title,
-            user: {
-              id: users.id,
-              username: users.username
-            }
+            user: users
           }
         })
         .from(prompts)

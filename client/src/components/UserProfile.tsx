@@ -426,11 +426,15 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="prompts">
-            <div className="space-y-4">
-              {userPrompts.map(prompt => (
-                <PromptCard key={prompt.id} prompt={prompt} />
-              ))}
-            </div>
+            {promptsLoading ? (
+              <div>Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                {userPromptsData?.prompts?.map(prompt => (
+                  <PromptCard key={prompt.id} prompt={prompt} />
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="starred">

@@ -147,15 +147,6 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         }
       };
       fetchVoteState();
-
-      // Fetch initial star count and status
-      fetch(`/api/prompts/${prompt.id}/stars`)
-        .then(res => res.json())
-        .then(data => {
-          setStarCount(data.count);
-          setIsStarred(data.isStarred);
-        })
-        .catch(console.error);
     }
   }, [prompt.id]);
 
@@ -331,27 +322,30 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
     try {
       const response = await fetch(`/api/prompts/${prompt.id}/fork`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to fork prompt');
       }
 
       const forkedPrompt = await response.json();
+      // Handle successful fork
       setForkCount(prev => prev + 1);
-
+      setIsForked(true);
       toast({
-        title: "Forked",
-        description: "Successfully forked the prompt",
+        title: "Success",
+        description: "Prompt forked successfully"
       });
-
       navigate(`/prompts/${forkedPrompt.id}`);
-    } catch (error: any) {
+    } catch (error) {
+      console.error('Fork error:', error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error.message || "Failed to fork prompt",
+        variant: "destructive"
       });
     }
   };
