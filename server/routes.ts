@@ -172,6 +172,9 @@ export function registerRoutes(app: Express) {
         });
       }
 
+      // Ensure version is handled as string
+      const version = String(req.body.version || "1.0.0");
+
       const [prompt] = await db
         .insert(prompts)
         .values({
@@ -179,7 +182,7 @@ export function registerRoutes(app: Express) {
           content: req.body.content,
           description: req.body.description,
           category: req.body.category,
-          version: req.body.version || "1.0.0",
+          version: version,  // Explicitly pass as string
           tags: sql`array[${sql.join(tags)}]::text[]`, // Properly format tags as PostgreSQL array
           userId: req.user!.id,
         })
