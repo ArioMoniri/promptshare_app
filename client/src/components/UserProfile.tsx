@@ -86,15 +86,12 @@ export default function UserProfile() {
   });
 
   const [forksPage, setForksPage] = useState(1);
-  const { data: userForksData = { forks: [], total: 0 }, isLoading: forksLoading } = useQuery({
-    queryKey: ['userForks', userId, forksPage],
+  const { data: userForksData = { forks: [] }, isLoading: forksLoading } = useQuery({
+    queryKey: ['userForks', userId],
     queryFn: async () => {
       try {
-        const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`, {
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json'
-          }
+        const response = await fetch(`/api/users/${userId}/forks`, {
+          credentials: 'include'
         });
         
         if (!response.ok) {
@@ -105,11 +102,10 @@ export default function UserProfile() {
         return response.json();
       } catch (error) {
         console.error('Failed to fetch forks:', error);
-        throw error; // Let React Query handle the error
+        return { forks: [] }; // Return empty array on error
       }
     },
-    enabled: !!userId,
-    retry: false
+    enabled: !!userId
   });
 
   const { data: userIssues = [] } = useQuery({

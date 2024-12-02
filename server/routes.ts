@@ -485,20 +485,24 @@ export function registerRoutes(app: Express) {
 
   // Get user's forks
   app.get("/api/users/:id/forks", async (req, res) => {
-    const userId = parseInt(req.params.id);
     try {
-      const userForks = await db
+      const userId = parseInt(req.params.id);
+      const forks = await db
         .select({
           fork: {
             id: prompts.id,
             title: prompts.title,
             content: prompts.content,
             description: prompts.description,
-            createdAt: prompts.createdAt
+            tags: prompts.tags,
+            category: prompts.category,
+            version: prompts.version,
+            createdAt: prompts.createdAt,
+            userId: prompts.userId,
           },
           original: {
-            id: sql<number>`${prompts.id}::int`,
-            title: prompts.title,
+            id: originalPrompts.id,
+            title: originalPrompts.title,
             user: {
               id: users.id,
               username: users.username,
@@ -508,12 +512,13 @@ export function registerRoutes(app: Express) {
         })
         .from(forks)
         .where(eq(forks.userId, userId))
-        .innerJoin(prompts, eq(forks.forkedPromptId, prompts.id))
-        .innerJoin(prompts, eq(forks.originalPromptId, prompts.id))
-        .leftJoin(users, eq(prompts.userId, users.id))
-        .orderBy(desc(forks.createdAt));
-      res.json(userForks);
+        .leftJoin(prompts, eq(forks.forkedPromptId, prompts.id))
+        .leftJoin(prompts as typeof originalPrompts, eq(forks.originalPromptId, originalPrompts.id))
+        .leftJoin(users, eq(originalPrompts.userId, users.id));
+
+      res.json({ forks });
     } catch (error) {
+      console.error('Failed to fetch user forks:', error);
       res.status(500).json({ error: "Failed to fetch user forks" });
     }
   });
