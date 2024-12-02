@@ -1,7 +1,11 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4-turbo-preview" which we'll use for optimal performance
-export async function testPrompt(messages: Array<{ role: string; content: string }>, apiKey: string) {
+type ChatMessage = {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+};
+
+export async function testPrompt(messages: ChatMessage[], apiKey: string) {
   if (!apiKey) {
     throw new Error('OpenAI API key is required');
   }
@@ -10,7 +14,7 @@ export async function testPrompt(messages: Array<{ role: string; content: string
   
   try {
     const completion = await openai.chat.completions.create({
-      messages,
+      messages: messages as any, // Type assertion as temporary fix
       model: "gpt-4-turbo-preview",
       temperature: 0.7,
       response_format: { type: "json_object" }
@@ -18,7 +22,6 @@ export async function testPrompt(messages: Array<{ role: string; content: string
 
     return completion;
   } catch (error: any) {
-    // Enhance error handling with more specific error messages
     if (error.response) {
       throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
     } else if (error.message) {

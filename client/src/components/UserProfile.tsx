@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 import { 
   Card, 
   CardContent, 
@@ -28,7 +29,41 @@ import { z } from "zod";
 import { User2, Shield, Key } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import PromptCard from "./PromptCard";
-import type { User } from "@db/schema";
+import type { User, Prompt } from "@db/schema";
+
+interface Fork {
+  fork: Prompt;
+  original: {
+    id: number;
+    title: string;
+    user: {
+      id: number;
+      username: string;
+      avatar: string | null;
+    };
+  };
+}
+
+interface Issue {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  createdAt: string;
+}
+
+interface IssueWithPrompt {
+  issue: Issue;
+  prompt: {
+    id: number;
+    title: string;
+    user: {
+      id: number;
+      username: string;
+      avatar: string | null;
+    };
+  };
+}
 
 export default function UserProfile() {
   const { id } = useParams();
@@ -86,7 +121,7 @@ export default function UserProfile() {
   });
 
   const [forksPage, setForksPage] = useState(1);
-  const { data: userForksData = { forks: [] }, isLoading: forksLoading } = useQuery({
+  const { data: userForksData = { forks: [] as Fork[] }, isLoading: forksLoading } = useQuery({
     queryKey: ['userForks', userId],
     queryFn: async () => {
       try {
@@ -113,7 +148,7 @@ export default function UserProfile() {
     retry: 1
   });
 
-  const { data: userIssues = [] } = useQuery({
+  const { data: userIssues = [] as IssueWithPrompt[] } = useQuery({
     queryKey: ['userIssues', userId],
     queryFn: async () => {
       const response = await fetch(`/api/users/${userId}/issues`);
