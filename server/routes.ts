@@ -546,33 +546,14 @@ export function registerRoutes(app: Express) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const promptId = parseInt(req.params.id);
-    const userId = req.user!.id;
-
     try {
-      if (isNaN(promptId)) {
-        return res.status(400).json({ error: "Invalid prompt ID" });
-      }
+      const promptId = parseInt(req.params.id);
+      const userId = req.user!.id;
 
-      // First verify the prompt exists and get its data
+      // Fetch original prompt with user data
       const [originalPrompt] = await db
-        .select({
-          prompt: {
-            id: prompts.id,
-            title: prompts.title,
-            content: prompts.content,
-            description: prompts.description,
-            tags: prompts.tags,
-            category: prompts.category,
-            version: prompts.version
-          },
-          user: {
-            id: users.id,
-            username: users.username
-          }
-        })
+        .select()
         .from(prompts)
-        .leftJoin(users, eq(prompts.userId, users.id))
         .where(eq(prompts.id, promptId))
         .limit(1);
 
@@ -580,76 +561,45 @@ export function registerRoutes(app: Express) {
         return res.status(404).json({ error: "Prompt not found" });
       }
 
-      // Handle tags safely with improved array handling
-      const promptTags = originalPrompt.prompt.tags || [];
-      const sanitizedTags = Array.isArray(promptTags) 
-        ? promptTags
-        : [];
+      // Ensure tags is an array
+      const tags = Array.isArray(originalPrompt.tags) 
+        ? originalPrompt.tags 
+        : originalPrompt.tags 
+          ? JSON.parse(originalPrompt.tags.toString().replace(/'/g, '"')) 
+          : [];
 
-      // Create fork within a transaction
-      const result = await db.transaction(async (tx) => {
-        // Create new prompt with proper tags handling
-        const [forkedPrompt] = await tx
+      // Create fork within transaction
+      const forkedPrompt = await db.transaction(async (tx) => {
+        const [newPrompt] = await tx
           .insert(prompts)
           .values({
-            title: `Fork of ${originalPrompt.prompt.title}`,
-            content: originalPrompt.prompt.content,
-            description: originalPrompt.prompt.description,
-            tags: sanitizedTags,
-            category: originalPrompt.prompt.category,
+            title: `Fork of ${originalPrompt.title}`,
+            content: originalPrompt.content,
+            description: originalPrompt.description,
+            tags: tags,
+            category: originalPrompt.category,
             userId: userId,
-            version: originalPrompt.prompt.version || "1.0.0"
+            version: originalPrompt.version || "1.0.0"
           })
           .returning();
 
-        // Record fork relationship
         await tx
           .insert(forks)
           .values({
             originalPromptId: promptId,
-            forkedPromptId: forkedPrompt.id,
+            forkedPromptId: newPrompt.id,
             userId: userId,
           });
 
-        return forkedPrompt;
+        return newPrompt;
       });
 
-      // Return the complete forked prompt with user data
-      const [completeForkedPrompt] = await db
-        .select({
-          id: prompts.id,
-          title: prompts.title,
-          content: prompts.content,
-          description: prompts.description,
-          tags: prompts.tags,
-          category: prompts.category,
-          version: prompts.version,
-          createdAt: prompts.createdAt,
-          updatedAt: prompts.updatedAt,
-          userId: prompts.userId,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          },
-          originalPrompt: {
-            id: originalPrompts.id,
-            title: originalPrompts.title,
-            user: users
-          }
-        })
-        .from(prompts)
-        .leftJoin(users, eq(prompts.userId, users.id))
-        .leftJoin(forks, eq(prompts.id, forks.forkedPromptId))
-        .leftJoin(prompts as typeof originalPrompts, eq(forks.originalPromptId, originalPrompts.id))
-        .where(eq(prompts.id, result.id));
-
-      res.json(completeForkedPrompt);
+      res.json(forkedPrompt);
     } catch (error: any) {
-      console.error("Fork error:", error);
+      console.error('Fork error:', error);
       res.status(500).json({ 
         error: "Failed to fork prompt",
-        message: error.message
+        message: error instanceof Error ? error.message : "Unknown error"
       });
     }
   });

@@ -68,27 +68,37 @@ export default function UserProfile() {
   });
 
   const [starredPage, setStarredPage] = useState(1);
-  const { data: starredPromptsData = { prompts: [], total: 0 } } = useQuery({
+  const { data: starredPromptsData = { prompts: [], total: 0 }, isLoading: starredLoading } = useQuery({
     queryKey: ['starredPrompts', userId, starredPage],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/starred?page=${starredPage}&limit=10`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch starred prompts');
+      try {
+        const response = await fetch(`/api/users/${userId}/starred?page=${starredPage}&limit=10`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch starred prompts');
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Failed to fetch starred prompts:', error);
+        return { prompts: [] };
       }
-      return response.json();
     },
     enabled: !!userId
   });
 
   const [forksPage, setForksPage] = useState(1);
-  const { data: userForksData = { forks: [], total: 0 } } = useQuery({
+  const { data: userForksData = { forks: [], total: 0 }, isLoading: forksLoading } = useQuery({
     queryKey: ['userForks', userId, forksPage],
     queryFn: async () => {
-      const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch user forks');
+      try {
+        const response = await fetch(`/api/users/${userId}/forks?page=${forksPage}&limit=10`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch forks');
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Failed to fetch forks:', error);
+        return { forks: [] };
       }
-      return response.json();
     },
     enabled: !!userId
   });
@@ -451,46 +461,31 @@ export default function UserProfile() {
           </TabsContent>
 
           <TabsContent value="forks">
-            <div className="space-y-4">
-              {userForksData?.forks?.map(({ fork, original }) => (
-                <Card key={fork.id}>
-                  <CardHeader>
-                    <div className="flex items-center space-x-4">
-                      <Avatar>
-                        <AvatarImage src={original.user?.avatar || undefined} />
-                        <AvatarFallback>{original.user?.username?.[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <CardTitle>{fork.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground">
-                          Forked from{' '}
-                          <Link href={`/profile/${original.user?.id}`} className="hover:underline">
-                            {original.user?.username}
-                          </Link>
-                          's{' '}
-                          <Link href={`/prompts/${original.id}`} className="hover:underline">
-                            {original.title}
-                          </Link>
-                        </p>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{fork.description}</p>
-                    {fork.tags?.map((tag) => (
-                      <Badge key={tag} variant="secondary" className="mr-2">
-                        {tag}
-                      </Badge>
-                    ))}
-                  </CardContent>
-                </Card>
-              ))}
-              {userForksData.forks?.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  No forks yet
-                </div>
-              )}
-            </div>
+            {forksLoading ? (
+              <div>Loading...</div>
+            ) : (
+              <div className="space-y-4">
+                {userForksData?.forks?.map(({ fork, original }) => (
+                  <PromptCard
+                    key={fork.id}
+                    prompt={{
+                      ...fork,
+                      user: original.user,
+                      originalPrompt: {
+                        id: original.id,
+                        title: original.title,
+                        user: original.user
+                      }
+                    }}
+                  />
+                ))}
+                {(!userForksData?.forks || userForksData.forks.length === 0) && (
+                  <div className="text-center text-muted-foreground py-8">
+                    No forks yet
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="issues">
