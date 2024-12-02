@@ -426,7 +426,7 @@ export default function UserProfile() {
           </TabsList>
 
           <TabsContent value="prompts">
-            {promptsLoading ? (
+            {isLoading ? (
               <div>Loading...</div>
             ) : (
               <div className="space-y-4">
