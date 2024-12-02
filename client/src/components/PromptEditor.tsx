@@ -83,13 +83,31 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
     }
 
     try {
-      await createPrompt({
-        title,
-        content,
-        description,
-        category,
-        version,
-        tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+      const response = await fetch('/api/prompts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          content,
+          description,
+          category,
+          version,
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+        }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || 'Failed to create prompt');
+      }
+
+      const prompt = await response.json();
+      toast({
+        title: "Success",
+        description: "Prompt created successfully",
       });
       onClose();
     } catch (error: any) {

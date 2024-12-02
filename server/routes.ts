@@ -151,6 +151,23 @@ export function registerRoutes(app: Express) {
     }
 
     try {
+      // Log the request body
+      console.log('Creating prompt with data:', {
+        ...req.body,
+        content: req.body.content?.substring(0, 50) + '...' // Truncate for logging
+      });
+
+      // Validate required fields
+      if (!req.body.title || !req.body.content) {
+        return res.status(400).json({ 
+          error: "Title and content are required",
+          details: {
+            title: !req.body.title ? "Title is required" : null,
+            content: !req.body.content ? "Content is required" : null
+          }
+        });
+      }
+
       const [prompt] = await db
         .insert(prompts)
         .values({
@@ -163,9 +180,16 @@ export function registerRoutes(app: Express) {
           userId: req.user!.id,
         })
         .returning();
+
+      console.log('Successfully created prompt:', prompt.id);
       res.json(prompt);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to create prompt" });
+    } catch (error: any) {
+      console.error('Failed to create prompt:', error);
+      res.status(500).json({ 
+        error: "Failed to create prompt",
+        message: error.message,
+        details: error.detail || error.toString()
+      });
     }
   });
 
