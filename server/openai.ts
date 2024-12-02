@@ -1,26 +1,42 @@
 import OpenAI from "openai";
 
+// the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
 type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
 };
 
-export async function testPrompt(messages: ChatMessage[], apiKey: string) {
-  if (!apiKey) {
+export async function testPrompt(prompt: string, input: string) {
+  if (!process.env.OPENAI_API_KEY) {
     throw new Error('OpenAI API key is required');
   }
 
-  const openai = new OpenAI({ apiKey });
+  // Replace {input} placeholder in prompt with actual input
+  const formattedPrompt = prompt.replace(/{input}/g, input);
   
   try {
     const completion = await openai.chat.completions.create({
-      messages: messages as any, // Type assertion as temporary fix
-      model: "gpt-4-turbo-preview",
+      messages: [
+        {
+          role: "system",
+          content: "You are a helpful AI assistant. Follow the given prompt instructions carefully."
+        },
+        {
+          role: "user",
+          content: formattedPrompt
+        }
+      ],
+      model: "gpt-4o",
       temperature: 0.7,
       response_format: { type: "json_object" }
     });
 
-    return completion;
+    return {
+      output: completion.choices[0].message.content,
+      usage: completion.usage
+    };
   } catch (error: any) {
     if (error.response) {
       throw new Error(`OpenAI API error: ${error.response.data.error.message}`);

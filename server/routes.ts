@@ -351,28 +351,59 @@ export function registerRoutes(app: Express) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    if (!req.user.apiKey) {
-      return res.status(400).json({ error: "Please add your OpenAI API key in your profile settings" });
-    }
-
     try {
-      const { messages } = req.body;
+      const { prompt, input } = req.body;
       
-      if (!Array.isArray(messages) || messages.length < 1) {
-        return res.status(400).json({ error: "Invalid messages format" });
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
       }
 
-      const completion = await testPrompt(messages, req.user.apiKey);
-      const response = completion.choices[0].message;
+      const result = await testPrompt(prompt, input || "");
 
-      res.json({
-        content: response.content,
-        usage: completion.usage
-      });
+      res.json(result);
     } catch (error: any) {
       console.error('OpenAI API error:', error);
       res.status(500).json({ 
         error: "Failed to test prompt",
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  // Analyze prompt endpoint
+  app.post("/api/analyze-prompt", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { prompt } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      const response = await openai.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: "You are a prompt engineering expert. Analyze the given prompt and provide feedback on its effectiveness, suggestions for improvement, and tone analysis. Respond with JSON in this format: { 'effectiveness': number from 0 to 1, 'suggestions': array of strings, 'tone': string }"
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        model: "gpt-4o",
+        response_format: { type: "json_object" }
+      });
+
+      const analysis = JSON.parse(response.choices[0].message.content || "{}");
+      res.json(analysis);
+    } catch (error: any) {
+      console.error('OpenAI API error:', error);
+      res.status(500).json({ 
+        error: "Failed to analyze prompt",
         message: error instanceof Error ? error.message : 'Unknown error'
       });
     }
