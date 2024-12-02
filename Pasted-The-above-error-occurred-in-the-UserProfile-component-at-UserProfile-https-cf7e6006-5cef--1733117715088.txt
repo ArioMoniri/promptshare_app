@@ -1,0 +1,35 @@
+The above error occurred in the <UserProfile> component:
+
+    at UserProfile (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/src/components/UserProfile.tsx:50:18)
+    at Route (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/wouter.js?v=a8e19f85:323:16)
+    at Switch (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/wouter.js?v=a8e19f85:379:17)
+    at main
+    at div
+    at Router (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/src/main.tsx:36:31)
+    at QueryClientProvider (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/@tanstack_react-query.js?v=a8e19f85:2797:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at UserProfile (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/src/components/UserProfile.tsx:50:18)
+at Route (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/wouter.js?v=a8e19f85:323:16)
+at Switch (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/wouter.js?v=a8e19f85:379:17)
+at main
+at div
+at Router (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/src/main.tsx:36:31)
+at QueryClientProvider (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/@fs/home/runner/PromptExchange/node_modules/.vite/deps/@tanstack_react-query.js?v=a8e19f85:2797:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+starredPrompts is not defined
+Fork error: 
+Error {}
+message: "malformed array literal: "[]""
+stack: "Error: malformed array literal: "[]"↵ at handleFork (https://cf7e6006-5cef-4dcf-a7fb-0a441e15e5a4-00-1jjrnhkje79b2.pike.replit.dev/src/components/PromptCard.tsx:262:15)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object

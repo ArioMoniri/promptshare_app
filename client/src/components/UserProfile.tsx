@@ -439,15 +439,20 @@ export default function UserProfile() {
 
           <TabsContent value="starred">
             <div className="space-y-4">
-              {starredPrompts.map(({ prompt }) => (
+              {starredPromptsData?.prompts?.map(prompt => (
                 <PromptCard key={prompt.id} prompt={prompt} />
               ))}
+              {starredPromptsData.prompts?.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  No starred prompts yet
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="forks">
             <div className="space-y-4">
-              {userForks.map(({ fork, original }) => (
+              {userForksData?.forks?.map(({ fork, original }) => (
                 <Card key={fork.id}>
                   <CardHeader>
                     <div className="flex items-center space-x-4">
@@ -480,7 +485,7 @@ export default function UserProfile() {
                   </CardContent>
                 </Card>
               ))}
-              {userForks.length === 0 && (
+              {userForksData.forks?.length === 0 && (
                 <div className="text-center text-muted-foreground py-8">
                   No forks yet
                 </div>
