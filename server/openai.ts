@@ -11,12 +11,56 @@ export async function testPrompt(messages: Array<{ role: string; content: string
   try {
     const completion = await openai.chat.completions.create({
       messages,
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o",
       temperature: 0.7,
+      response_format: { type: "json_object" }
     });
 
     return completion;
   } catch (error: any) {
-    throw new Error(error.message);
+    // Enhance error handling with more specific error messages
+    if (error.response) {
+      throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
+    } else if (error.message) {
+      throw new Error(`Error: ${error.message}`);
+    } else {
+      throw new Error('An unknown error occurred while testing the prompt');
+    }
+  }
+}
+
+// Function to analyze prompt effectiveness
+export async function analyzePrompt(prompt: string, apiKey: string): Promise<{
+  effectiveness: number;
+  suggestions: string[];
+  tone: string;
+}> {
+  const openai = new OpenAI({ apiKey });
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a prompt engineering expert. Analyze the given prompt and provide feedback on its effectiveness, suggestions for improvement, and tone analysis. Respond with JSON in this format: { 'effectiveness': number from 0 to 1, 'suggestions': array of strings, 'tone': string }"
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    return JSON.parse(response.choices[0].message.content);
+  } catch (error: any) {
+    if (error.response) {
+      throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
+    } else if (error.message) {
+      throw new Error(`Error: ${error.message}`);
+    } else {
+      throw new Error('An unknown error occurred while analyzing the prompt');
+    }
   }
 }

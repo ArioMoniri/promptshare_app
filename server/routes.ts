@@ -488,10 +488,7 @@ export function registerRoutes(app: Express) {
     try {
       const userId = parseInt(req.params.id);
       
-      // Create alias for prompts table for original prompts
-      const originalPromptsTable = prompts;
-      
-      const forks = await db
+      const forkQuery = db
         .select({
           fork: {
             id: prompts.id,
@@ -505,8 +502,8 @@ export function registerRoutes(app: Express) {
             userId: prompts.userId,
           },
           original: {
-            id: originalPromptsTable.id,
-            title: originalPromptsTable.title,
+            id: prompts.id,
+            title: prompts.title,
             user: {
               id: users.id,
               username: users.username,
@@ -517,10 +514,11 @@ export function registerRoutes(app: Express) {
         .from(forks)
         .where(eq(forks.userId, userId))
         .leftJoin(prompts, eq(forks.forkedPromptId, prompts.id))
-        .leftJoin(originalPromptsTable, eq(forks.originalPromptId, originalPromptsTable.id))
-        .leftJoin(users, eq(originalPromptsTable.userId, users.id));
+        .leftJoin(prompts as typeof prompts, eq(forks.originalPromptId, prompts.id))
+        .leftJoin(users, eq(prompts.userId, users.id));
 
-      res.json({ forks });
+      const userForks = await forkQuery;
+      res.json({ forks: userForks });
     } catch (error) {
       console.error('Failed to fetch user forks:', error);
       res.status(500).json({ error: "Failed to fetch user forks" });
