@@ -2,9 +2,31 @@ import type { Express } from "express";
 import { setupAuth } from "./auth";
 import { db } from "../db";
 import { prompts, votes, users, comments, stars, forks, issues } from "@db/schema";
-const originalPrompts = prompts;
-import { eq, sql, desc, and } from "drizzle-orm";
+import { eq, sql, desc, and, type SQL } from "drizzle-orm";
 import { testPrompt } from "./openai";
+
+// Define types for joined queries
+type UserSelect = {
+  id: number;
+  username: string;
+  avatar: string | null;
+};
+
+type PromptWithUser = {
+  id: number;
+  title: string;
+  content: string;
+  description: string | null;
+  tags: string[];
+  upvotes: number;
+  downvotes: number;
+  category: string | null;
+  version: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: number | null;
+  user: UserSelect | null;
+};
 
 export function registerRoutes(app: Express) {
   setupAuth(app);
@@ -64,7 +86,7 @@ export function registerRoutes(app: Express) {
             ELSE 0 END`))
         : query.orderBy(desc(prompts.createdAt));
 
-      const allPrompts = await query;
+      const allPrompts = await finalQuery;
       res.json(allPrompts);
     } catch (error: any) {
       console.error('Error fetching prompts:', error);
@@ -460,8 +482,8 @@ export function registerRoutes(app: Express) {
             createdAt: prompts.createdAt
           },
           original: {
-            id: originalPrompts.id,
-            title: originalPrompts.title,
+            id: sql<number>`${prompts.id}::int`,
+            title: prompts.title,
             user: {
               id: users.id,
               username: users.username,
@@ -472,8 +494,8 @@ export function registerRoutes(app: Express) {
         .from(forks)
         .where(eq(forks.userId, userId))
         .innerJoin(prompts, eq(forks.forkedPromptId, prompts.id))
-        .innerJoin(prompts as typeof originalPrompts, eq(forks.originalPromptId, originalPrompts.id))
-        .leftJoin(users, eq(originalPrompts.userId, users.id))
+        .innerJoin(prompts, eq(forks.originalPromptId, prompts.id))
+        .leftJoin(users, eq(prompts.userId, users.id))
         .orderBy(desc(forks.createdAt));
       res.json(userForks);
     } catch (error) {
@@ -565,7 +587,7 @@ export function registerRoutes(app: Express) {
       const tags = Array.isArray(originalPrompt.tags) 
         ? originalPrompt.tags 
         : originalPrompt.tags 
-          ? JSON.parse(originalPrompt.tags.toString().replace(/'/g, '"')) 
+          ? JSON.parse(JSON.stringify(originalPrompt.tags))
           : [];
 
       // Create fork within transaction

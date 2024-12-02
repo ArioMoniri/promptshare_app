@@ -1,3 +1,4 @@
+import React from 'react';
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { PromptDialog } from "./PromptDialog";
@@ -32,6 +33,42 @@ import {
 } from "lucide-react";
 import { cn } from '@/lib/utils';
 import type { Prompt } from "@db/schema";
+
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Component Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-4 border border-red-200 rounded bg-red-50">
+          <h2 className="text-red-800">Something went wrong.</h2>
+          <button 
+            className="mt-2 text-sm text-red-600 hover:text-red-800"
+            onClick={() => this.setState({ hasError: false })}
+          >
+            Try again
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 interface PromptComment {
   id: number;
@@ -87,43 +124,6 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   const [isStarred, setIsStarred] = useState(false);
   const [forkCount, setForkCount] = useState(0);
   const [isForked, setIsForked] = useState(false);
-
-  useEffect(() => {
-    // Fetch star and fork count
-    const fetchCounts = async () => {
-      try {
-        const [starResponse, forkResponse] = await Promise.all([
-          fetch(`/api/prompts/${prompt.id}/stars`),
-          fetch(`/api/prompts/${prompt.id}/forks`)
-        ]);
-        
-        if (!starResponse.ok || !forkResponse.ok) {
-          throw new Error('Failed to fetch counts - Server error');
-        }
-        
-        const starData = await starResponse.json();
-        const forkData = await forkResponse.json();
-        
-        setLocalStarCount(starData.count || 0);
-        setIsStarred(starData.isStarred || false);
-        setForkCount(forkData.count || 0);
-        setIsForked(forkData.isForked || false);
-      } catch (error) {
-        console.error('Failed to fetch counts:', error);
-        // Set defaults on error
-        setLocalStarCount(0);
-        setIsStarred(false);
-        setForkCount(0);
-        setIsForked(false);
-      }
-    };
-
-    if (prompt.id) {
-      fetchCounts();
-      const interval = setInterval(fetchCounts, 5000); // Update every 5 seconds
-      return () => clearInterval(interval);
-    }
-  }, [prompt.id]);
   const [showIssues, setShowIssues] = useState(false);
   const [, navigate] = useLocation();
 
@@ -133,22 +133,69 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   useEffect(() => {
     if (prompt.id) {
       fetchComments();
-      const fetchVoteState = async () => {
-        try {
-          const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
-            credentials: 'include'
-          });
-          if (!response.ok) return; // Silently fail if not authenticated
-          const { value } = await response.json();
-          setHasVoted(value);
-        } catch (error) {
-          // Silently handle errors for vote state
-          console.debug('Vote state fetch failed:', error);
-        }
-      };
       fetchVoteState();
+      fetchCounts();
     }
   }, [prompt.id]);
+
+  const fetchVoteState = async () => {
+    try {
+      const response = await fetch(`/api/prompts/${prompt.id}/vote-state`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch vote state');
+      }
+      
+      const data = await response.json();
+      setHasVoted(data.value);
+    } catch (error) {
+      console.error('Failed to fetch vote state:', error);
+      setHasVoted(0); // Set default value on error
+    }
+  };
+
+  const fetchCounts = async () => {
+    try {
+      const [starResponse, forkResponse] = await Promise.all([
+        fetch(`/api/prompts/${prompt.id}/stars`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
+        }),
+        fetch(`/api/prompts/${prompt.id}/forks`, {
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
+      ]);
+
+      if (!starResponse.ok || !forkResponse.ok) {
+        throw new Error('Failed to fetch counts');
+      }
+
+      const starData = await starResponse.json();
+      const forkData = await forkResponse.json();
+
+      setLocalStarCount(starData.count || 0);
+      setIsStarred(starData.isStarred || false);
+      setForkCount(forkData.count || 0);
+      setIsForked(forkData.isForked || false);
+    } catch (error) {
+      console.error('Failed to fetch counts:', error);
+      // Set default values on error
+      setLocalStarCount(0);
+      setIsStarred(false);
+      setForkCount(0);
+      setIsForked(false);
+    }
+  };
 
   const fetchComments = async () => {
     if (!prompt.id) return;
@@ -219,58 +266,58 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
     try {
       const newVoteValue = hasVoted === value ? 0 : value;
       
+      // Store previous state for rollback
+      const previousState = {
+        hasVoted,
+        upvotes: optimisticUpvotes,
+        downvotes: optimisticDownvotes
+      };
+      
       // Optimistically update UI
       setHasVoted(newVoteValue);
-      
-      // Calculate new vote counts
-      const newUpvotes = optimisticUpvotes + (
+      setOptimisticUpvotes(prev => prev + (
         value === 1 
           ? (newVoteValue === 1 ? 1 : -1) 
           : (hasVoted === 1 ? -1 : 0)
-      );
-      
-      const newDownvotes = optimisticDownvotes + (
+      ));
+      setOptimisticDownvotes(prev => prev + (
         value === -1 
           ? (newVoteValue === -1 ? 1 : -1)
           : (hasVoted === -1 ? -1 : 0)
-      );
-      
-      setOptimisticUpvotes(newUpvotes);
-      setOptimisticDownvotes(newDownvotes);
+      ));
 
       const response = await fetch(`/api/prompts/${prompt.id}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ value: newVoteValue }),
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         credentials: 'include',
+        body: JSON.stringify({ value: newVoteValue })
       });
 
       if (!response.ok) {
-        throw new Error(await response.text());
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to vote');
       }
 
-      // Get latest counts from server
-      const promptResponse = await fetch(`/api/prompts/${prompt.id}`);
-      if (!promptResponse.ok) {
-        throw new Error('Failed to fetch updated prompt');
-      }
-      
-      const updatedPrompt = await promptResponse.json();
-      setOptimisticUpvotes(updatedPrompt.upvotes);
-      setOptimisticDownvotes(updatedPrompt.downvotes);
-    } catch (error: any) {
-      // Revert optimistic updates on error
-      const response = await fetch(`/api/prompts/${prompt.id}`);
-      const currentPrompt = await response.json();
-      setHasVoted(0);  // Reset vote state
-      setOptimisticUpvotes(currentPrompt.upvotes);
-      setOptimisticDownvotes(currentPrompt.downvotes);
-      
+      const data = await response.json();
+      setOptimisticUpvotes(data.upvotes);
+      setOptimisticDownvotes(data.downvotes);
+      setHasVoted(newVoteValue);
+
+    } catch (error) {
+      console.error('Vote error:', error);
       toast({
-        variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Failed to vote",
+        variant: "destructive"
       });
+
+      // Revert to previous state
+      setHasVoted(previousState.hasVoted);
+      setOptimisticUpvotes(previousState.upvotes);
+      setOptimisticDownvotes(previousState.downvotes);
     }
   };
 
@@ -359,7 +406,8 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
   };
 
   return (
-    <Card className={cn("w-full max-w-3xl hover:shadow-lg transition-shadow mx-auto", compact && "p-4")}>
+    <ErrorBoundary>
+      <Card className={cn("w-full max-w-3xl hover:shadow-lg transition-shadow mx-auto", compact && "p-4")}>
       <CardHeader className={cn(compact && "p-0 pb-4")}>
         <div className="flex items-center space-x-4">
           {prompt.user?.id ? (
@@ -626,5 +674,6 @@ export default function PromptCard({ prompt, compact = false }: PromptCardProps)
         </DialogContent>
       </Dialog>
     </Card>
+    </ErrorBoundary>
   );
 }
