@@ -151,10 +151,14 @@ export function registerRoutes(app: Express) {
     }
 
     try {
-      // Log the request body
+      // Parse tags properly
+      const tags = Array.isArray(req.body.tags) ? req.body.tags : [];
+      
+      // Log the request body with proper tags
       console.log('Creating prompt with data:', {
         ...req.body,
-        content: req.body.content?.substring(0, 50) + '...' // Truncate for logging
+        content: req.body.content?.substring(0, 50) + '...',
+        tags // Show parsed tags
       });
 
       // Validate required fields
@@ -176,7 +180,7 @@ export function registerRoutes(app: Express) {
           description: req.body.description,
           category: req.body.category,
           version: req.body.version || "1.0.0",
-          tags: req.body.tags || [],
+          tags: sql`array[${sql.join(tags)}]::text[]`, // Properly format tags as PostgreSQL array
           userId: req.user!.id,
         })
         .returning();

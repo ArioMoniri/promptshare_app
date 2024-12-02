@@ -83,6 +83,11 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
     }
 
     try {
+      // Parse tags into array before sending
+      const tagArray = tags.split(',')
+        .map(t => t.trim())
+        .filter(Boolean);
+
       const response = await fetch('/api/prompts', {
         method: 'POST',
         headers: {
@@ -94,7 +99,7 @@ export default function PromptEditor({ onClose }: PromptEditorProps) {
           description,
           category,
           version,
-          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
+          tags: tagArray, // Send as array
         }),
         credentials: 'include'
       });
