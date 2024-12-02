@@ -25,7 +25,11 @@ type PromptWithUser = {
   createdAt: Date;
   updatedAt: Date;
   userId: number | null;
-  user: UserSelect | null;
+  user: {
+    id: SQL<number>;
+    username: SQL<string>;
+    avatar: SQL<string | null>;
+  };
 };
 
 export function registerRoutes(app: Express) {
@@ -50,11 +54,11 @@ export function registerRoutes(app: Express) {
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
           userId: prompts.userId,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
+          user: sql<UserSelect>`json_build_object(
+            'id', ${users.id},
+            'username', ${users.username},
+            'avatar', ${users.avatar}
+          )`
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id));
@@ -118,11 +122,11 @@ export function registerRoutes(app: Express) {
           createdAt: prompts.createdAt,
           updatedAt: prompts.updatedAt,
           userId: prompts.userId,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
+          user: sql<UserSelect>`json_build_object(
+            'id', ${users.id},
+            'username', ${users.username},
+            'avatar', ${users.avatar}
+          )`
         })
         .from(prompts)
         .leftJoin(users, eq(prompts.userId, users.id))
@@ -273,11 +277,11 @@ export function registerRoutes(app: Express) {
           id: comments.id,
           content: comments.content,
           createdAt: comments.createdAt,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
+          user: sql<UserSelect>`json_build_object(
+            'id', ${users.id},
+            'username', ${users.username},
+            'avatar', ${users.avatar}
+          )`
         })
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
@@ -325,11 +329,11 @@ export function registerRoutes(app: Express) {
           id: comments.id,
           content: comments.content,
           createdAt: comments.createdAt,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
+          user: sql<UserSelect>`json_build_object(
+            'id', ${users.id},
+            'username', ${users.username},
+            'avatar', ${users.avatar}
+          )`
         })
         .from(comments)
         .leftJoin(users, eq(comments.userId, users.id))
@@ -423,11 +427,11 @@ export function registerRoutes(app: Express) {
             createdAt: prompts.createdAt,
             updatedAt: prompts.updatedAt,
             userId: prompts.userId,
-            user: {
-              id: users.id,
-              username: users.username,
-              avatar: users.avatar
-            }
+            user: sql<UserSelect>`json_build_object(
+              'id', ${users.id},
+              'username', ${users.username},
+              'avatar', ${users.avatar}
+            )`
           })
           .from(prompts)
           .leftJoin(users, eq(prompts.userId, users.id))
@@ -465,11 +469,11 @@ export function registerRoutes(app: Express) {
             content: prompts.content,
             description: prompts.description,
             createdAt: prompts.createdAt,
-            user: {
-              id: users.id,
-              username: users.username,
-              avatar: users.avatar
-            }
+            user: sql<UserSelect>`json_build_object(
+              'id', ${users.id},
+              'username', ${users.username},
+              'avatar', ${users.avatar}
+            )`
           }
         })
         .from(stars)
@@ -504,11 +508,11 @@ export function registerRoutes(app: Express) {
           original: {
             id: prompts.id,
             title: prompts.title,
-            user: {
-              id: users.id,
-              username: users.username,
-              avatar: users.avatar
-            }
+            user: sql<UserSelect>`json_build_object(
+              'id', ${users.id},
+              'username', ${users.username},
+              'avatar', ${users.avatar}
+            )`
           }
         })
         .from(forks)
@@ -541,11 +545,11 @@ export function registerRoutes(app: Express) {
           prompt: {
             id: prompts.id,
             title: prompts.title,
-            user: {
-              id: users.id,
-              username: users.username,
-              avatar: users.avatar
-            }
+            user: sql<UserSelect>`json_build_object(
+              'id', ${users.id},
+              'username', ${users.username},
+              'avatar', ${users.avatar}
+            )`
           }
         })
         .from(issues)
@@ -881,11 +885,11 @@ export function registerRoutes(app: Express) {
           description: issues.description,
           status: issues.status,
           createdAt: issues.createdAt,
-          user: {
-            id: users.id,
-            username: users.username,
-            avatar: users.avatar
-          }
+          user: sql<UserSelect>`json_build_object(
+            'id', ${users.id},
+            'username', ${users.username},
+            'avatar', ${users.avatar}
+          )`
         })
         .from(issues)
         .leftJoin(users, eq(issues.userId, users.id))

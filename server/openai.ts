@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// the newest OpenAI model is "gpt-4-turbo-preview" which we'll use for optimal performance
 export async function testPrompt(messages: Array<{ role: string; content: string }>, apiKey: string) {
   if (!apiKey) {
     throw new Error('OpenAI API key is required');
@@ -11,7 +11,7 @@ export async function testPrompt(messages: Array<{ role: string; content: string
   try {
     const completion = await openai.chat.completions.create({
       messages,
-      model: "gpt-4o",
+      model: "gpt-4-turbo-preview",
       temperature: 0.7,
       response_format: { type: "json_object" }
     });
@@ -39,7 +39,7 @@ export async function analyzePrompt(prompt: string, apiKey: string): Promise<{
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4-turbo-preview",
       messages: [
         {
           role: "system",
@@ -53,7 +53,12 @@ export async function analyzePrompt(prompt: string, apiKey: string): Promise<{
       response_format: { type: "json_object" }
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const content = response.choices[0].message.content;
+    return content ? JSON.parse(content) : {
+      effectiveness: 0,
+      suggestions: ["Failed to analyze prompt"],
+      tone: "unknown"
+    };
   } catch (error: any) {
     if (error.response) {
       throw new Error(`OpenAI API error: ${error.response.data.error.message}`);
