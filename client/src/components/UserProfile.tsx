@@ -91,7 +91,10 @@ export default function UserProfile() {
     queryFn: async () => {
       try {
         const response = await fetch(`/api/users/${userId}/forks`, {
-          credentials: 'include'
+          credentials: 'include',
+          headers: {
+            'Accept': 'application/json'
+          }
         });
         
         if (!response.ok) {
@@ -99,13 +102,15 @@ export default function UserProfile() {
           throw new Error(error.message || 'Failed to fetch forks');
         }
         
-        return response.json();
+        const data = await response.json();
+        return data;
       } catch (error) {
         console.error('Failed to fetch forks:', error);
-        return { forks: [] }; // Return empty array on error
+        return { forks: [] };
       }
     },
-    enabled: !!userId
+    enabled: !!userId,
+    retry: 1
   });
 
   const { data: userIssues = [] } = useQuery({

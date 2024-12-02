@@ -592,52 +592,55 @@ export function registerRoutes(app: Express) {
       const promptId = parseInt(req.params.id);
       const userId = req.user!.id;
 
-      // Fetch original prompt with user data
+      // Verify prompt exists and fetch it
       const [originalPrompt] = await db
-        .select()
+        .select({
+          id: prompts.id,
+          title: prompts.title,
+          content: prompts.content,
+          description: prompts.description,
+          tags: prompts.tags,
+          category: prompts.category,
+          version: prompts.version,
+        })
         .from(prompts)
         .where(eq(prompts.id, promptId))
         .limit(1);
 
       if (!originalPrompt) {
-        return res.status(404).json({ error: "Prompt not found" });
+        return res.status(404).json({ error: "Original prompt not found" });
       }
 
-      // Ensure tags is an array
-      const tags = Array.isArray(originalPrompt.tags) 
-        ? originalPrompt.tags 
-        : originalPrompt.tags 
-          ? JSON.parse(JSON.stringify(originalPrompt.tags))
-          : [];
-
       // Create fork within transaction
-      const forkedPrompt = await db.transaction(async (tx) => {
-        const [newPrompt] = await tx
+      const result = await db.transaction(async (tx) => {
+        // Create new prompt
+        const [forkedPrompt] = await tx
           .insert(prompts)
           .values({
             title: `Fork of ${originalPrompt.title}`,
             content: originalPrompt.content,
             description: originalPrompt.description,
-            tags: tags,
+            tags: originalPrompt.tags || [],
             category: originalPrompt.category,
             userId: userId,
-            version: originalPrompt.version || "1.0.0"
+            version: originalPrompt.version
           })
           .returning();
 
+        // Create fork relationship
         await tx
           .insert(forks)
           .values({
             originalPromptId: promptId,
-            forkedPromptId: newPrompt.id,
+            forkedPromptId: forkedPrompt.id,
             userId: userId,
           });
 
-        return newPrompt;
+        return forkedPrompt;
       });
 
-      res.json(forkedPrompt);
-    } catch (error: any) {
+      res.json(result);
+    } catch (error) {
       console.error('Fork error:', error);
       res.status(500).json({ 
         error: "Failed to fork prompt",
